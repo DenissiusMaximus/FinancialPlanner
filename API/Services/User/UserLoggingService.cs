@@ -2,15 +2,16 @@ using API.Dtos;
 
 namespace API.Services.User;
 
-public class UserLoggingService(IUserService innerService, ILoggingService loggingService) : IUserService
+public class UserLoggingService(IUserService innerService, ILogger<UserLoggingService> logger) : IUserService
 {
     public async Task<AuthUserDto?> CreateUser(string name, string email, string password)
     {
         var result = await innerService.CreateUser(name, email, password);
-
-        loggingService.WriteLog(result != null
-            ? $"User {name}, {email} created successfully."
-            : $"Failed to create user {name}, {email}.");
+        
+        if(result != null)
+            logger.LogInformation("User created with email: {Email}", email);
+        else
+            logger.LogWarning("Failed to create user with email: {Email}", email);
 
         return result;
     }
@@ -18,9 +19,12 @@ public class UserLoggingService(IUserService innerService, ILoggingService loggi
     public async Task<AuthUserDto?> LoginUser(string email, string password)
     {
         var result = await innerService.LoginUser(email, password);
-        loggingService.WriteLog(result != null
-            ? $"User {email} logged in successfully."
-            : $"Failed to log in user {email}.");
+    
+        if(result != null)
+            logger.LogInformation("User logged in with email: {Email}", email);
+        else
+            logger.LogWarning("Failed to log in user with email: {Email}", email);
+
         return result;
     }
 }

@@ -4,5 +4,6 @@
         "bin": true,
         ".idea": true,
         ".vscode": true
-    }
+    },
+    "logViewerPlus.watch": []
 }
