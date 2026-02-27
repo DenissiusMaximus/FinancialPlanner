@@ -19,7 +19,6 @@ public class JwtProvider : IJwtProvider
 
         _refreshSecret = refreshSecret;
         _accessSecret = accessSecret;
-        _logger = logger;
     }
 
     public string GenerateAccessToken(int id)
