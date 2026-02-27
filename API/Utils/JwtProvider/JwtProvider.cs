@@ -19,6 +19,7 @@ public class JwtProvider : IJwtProvider
 
         _refreshSecret = refreshSecret;
         _accessSecret = accessSecret;
+        _logger = logger;
     }
 
     public string GenerateAccessToken(int id)
@@ -65,15 +66,26 @@ public class JwtProvider : IJwtProvider
             ClockSkew = TimeSpan.Zero
         };
 
-        var principal = tokenHandler.ValidateToken(token, parameters, out _);
-
-        var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub)
-                          ?? principal.FindFirst(ClaimTypes.NameIdentifier);
-
-
-        if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+        try
         {
-            return userId;
+            var principal = tokenHandler.ValidateToken(token, parameters, out _);
+
+            var userIdClaim = principal.FindFirst(JwtRegisteredClaimNames.Sub)
+                              ?? principal.FindFirst(ClaimTypes.NameIdentifier);
+
+
+            if (userIdClaim != null && int.TryParse(userIdClaim.Value, out var userId))
+            {
+                return userId;
+            }
+        }
+        catch (ArgumentException ex )
+        {
+            return null;
+        }
+        catch (SecurityTokenException ex)
+        {
+            return null;
         }
 
         return null;
