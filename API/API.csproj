@@ -28,8 +28,10 @@
   <ItemGroup>
     <Folder Include="Dtos\" />
     <Folder Include="Extensions\" />
+    <Folder Include="Filter\" />
     <Folder Include="logs\" />
     <Folder Include="Utils\ExceptionHandler\" />
+    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>

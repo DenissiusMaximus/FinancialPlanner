@@ -5,6 +5,7 @@ using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
 using API.Utils.JwtProvider;
+using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -18,6 +19,8 @@ builder.Host.UseSerilog(((context, configuration) => configuration
     .WriteTo.File("logs/log-.log", rollingInterval: RollingInterval.Day)
     .ReadFrom.Configuration(context.Configuration)
 ));
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
