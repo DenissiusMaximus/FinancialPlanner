@@ -1,7 +1,7 @@
-﻿
+﻿using API.Models;
 using Microsoft.EntityFrameworkCore;
 
-namespace API.Models;
+namespace API;
 
 public partial class AppDbContext : DbContext
 {
@@ -15,6 +15,8 @@ public partial class AppDbContext : DbContext
     }
 
     public virtual DbSet<Aim> Aims { get; set; }
+
+    public virtual DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
 
     public virtual DbSet<Category> Categories { get; set; }
 
@@ -53,6 +55,16 @@ public partial class AppDbContext : DbContext
                 .HasForeignKey(d => d.UserId)
                 .OnDelete(DeleteBehavior.ClientSetNull)
                 .HasConstraintName("FK__Aims__UserId__5070F446");
+        });
+
+        modelBuilder.Entity<BlacklistedToken>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Blacklis__3214EC078E1AA827");
+
+            entity.Property(e => e.ExpiryDate).HasColumnType("datetime");
+            entity.Property(e => e.Jti)
+                .HasMaxLength(255)
+                .IsUnicode(false);
         });
 
         modelBuilder.Entity<Category>(entity =>

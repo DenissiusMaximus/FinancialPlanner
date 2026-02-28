@@ -1,19 +1,12 @@
+using API.Models;
 using API.Utils.JwtProvider;
 
-namespace API.Services;
+namespace API.Services.Jwt;
 
-public class JwtService(IJwtProvider jwtProvider) : IJwtService
+public class JwtService(IJwtProvider jwtProvider, AppDbContext context) : IJwtService
 {
-    public async Task<string?> RefreshToken(string refreshToken)
+    public Task<string?> RefreshToken(string refreshToken)
     {
-        var validateRefreshToken = await jwtProvider.ValidateRefreshToken(refreshToken);
-
-        if (validateRefreshToken != null)
-        {
-            var newAccessToken = jwtProvider.GenerateAccessToken(validateRefreshToken.Value);
-            return newAccessToken;
-        }
-
-        return null;
+        return jwtProvider.RefreshToken(refreshToken);
     }
 }

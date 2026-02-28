@@ -1,6 +1,7 @@
 using System.Text;
-using API.Models;
+using API;
 using API.Services;
+using API.Services.Jwt;
 using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
@@ -26,7 +27,7 @@ builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
 
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
-builder.Services.AddSingleton<IJwtProvider, JwtProvider>();
+builder.Services.AddScoped<IJwtProvider, JwtProvider>();
 
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IJwtService, JwtService>();

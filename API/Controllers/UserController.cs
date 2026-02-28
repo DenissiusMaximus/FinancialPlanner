@@ -36,9 +36,14 @@ public class UserController(IUserService userService) : ControllerBase
     }
 
     [Authorize]
-    [HttpPost("test")]
-    public async Task<ActionResult> Test()
+    [HttpPost("logout")]
+    public async Task<ActionResult> Logout([FromBody] string refreshToken)
     {
-        return Ok("Test endpoint is working!");
+        var result = await userService.Logout(refreshToken);
+
+        if (!result)
+            return BadRequest("Failed to logout");
+
+        return Ok();
     }
 }   

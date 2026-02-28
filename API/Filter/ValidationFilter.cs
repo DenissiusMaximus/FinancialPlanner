@@ -12,10 +12,13 @@ public class ValidationFilter<T>(IValidator<T> validator) : IAsyncActionFilter w
         var argument = context.ActionArguments.Values.FirstOrDefault(x => x is T) as T;
 
         if (argument == null)
+        {
             await next();
+            return;
+        }
 
         var validationResult = await validator.ValidateAsync(argument);
-
+        
         if(!validationResult.IsValid)
         {
             var errors = validationResult.Errors
