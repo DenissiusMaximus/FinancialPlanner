@@ -1,11 +1,10 @@
-using System;
 using Microsoft.AspNetCore.Diagnostics;
 
 namespace API.Utils.ExceptionHandler;
 
 public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IExceptionHandler
 {
-    public ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
+    public async ValueTask<bool> TryHandleAsync(HttpContext httpContext, Exception exception, CancellationToken cancellationToken)
     {
         logger.LogError(exception, "An unhandled exception occurred.");
 
@@ -13,6 +12,11 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
         response.ContentType = "application/json";
         response.StatusCode = StatusCodes.Status500InternalServerError;
 
-        return new ValueTask<bool>(true);
+        await response.WriteAsJsonAsync(new
+        {
+            error = "An unexpected error occurred."
+        }, cancellationToken);
+
+        return true;
     }
 }

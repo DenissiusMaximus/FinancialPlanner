@@ -1,34 +1,21 @@
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.Extensions.Options;
 using Microsoft.IdentityModel.Tokens;
 
 namespace API.Utils.JwtProvider;
 
-public class JwtProvider : IJwtProvider
+public class JwtProvider(IOptions<JwtOptions> options) : IJwtProvider
 {
-    private readonly string _accessSecret;
-    private readonly string _refreshSecret;
-
-    public JwtProvider(IConfiguration configuration)
-    {
-        var accessSecret = configuration.GetValue<string>("Jwt:SecretAccess")
-                           ?? throw new Exception("JWT access secret not found");
-        var refreshSecret = configuration.GetValue<string>("Jwt:SecretRefresh")
-                            ?? throw new Exception("JWT refresh secret not found");
-
-        _refreshSecret = refreshSecret;
-        _accessSecret = accessSecret;
-    }
-
     public string GenerateAccessToken(int id)
-        => GenerateToken(id, () => DateTime.UtcNow.AddMinutes(15), _accessSecret);
+        => GenerateToken(id, () => DateTime.UtcNow.AddMinutes(15), options.Value.SecretAccess);
 
     public string GenerateRefreshToken(int id)
-        => GenerateToken(id, () => DateTime.UtcNow.AddDays(30), _refreshSecret);
+        => GenerateToken(id, () => DateTime.UtcNow.AddDays(30), options.Value.SecretRefresh);
 
     public async Task<int?> ValidateRefreshToken(string token)
-        => await ValidateToken(token, _refreshSecret);
+        => await ValidateToken(token, options.Value.SecretRefresh);
 
     private static string GenerateToken(int id, Func<DateTime> addLifeTime, string secret)
     {
