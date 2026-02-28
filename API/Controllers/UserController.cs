@@ -1,6 +1,7 @@
 using API.Dtos;
 using API.Inputs;
 using API.Services;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -29,5 +30,12 @@ public class UserController(IUserService userService) : ControllerBase
             return Unauthorized();
 
         return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("test")]
+    public async Task<ActionResult> Test()
+    {
+        return Ok("Test endpoint is working!");
     }
 }   

@@ -28,6 +28,7 @@
     <Folder Include="Dtos\" />
     <Folder Include="Extensions\" />
     <Folder Include="logs\" />
+    <Folder Include="Utils\ExceptionHandler\" />
   </ItemGroup>
 
 </Project>

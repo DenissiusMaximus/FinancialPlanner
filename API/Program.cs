@@ -3,6 +3,7 @@ using API.Models;
 using API.Services;
 using API.Services.User;
 using API.Utils;
+using API.Utils.ExceptionHandler;
 using API.Utils.JwtProvider;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -25,8 +26,12 @@ builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddSingleton<IJwtProvider, JwtProvider>();
 
 builder.Services.AddScoped<IJwtService, JwtService>();
+builder.Services.Decorate<IJwtService, JwtLoggingService>();
+
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Decorate<IUserService, UserLoggingService>();
+
+builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
@@ -68,8 +73,13 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
 
 builder.Services.AddAuthorization();
 
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+app.UseExceptionHandler();
 
 app.UseAuthentication();
 app.UseAuthorization();

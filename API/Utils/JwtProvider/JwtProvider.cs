@@ -78,11 +78,11 @@ public class JwtProvider : IJwtProvider
                 return userId;
             }
         }
-        catch (ArgumentException ex )
+        catch (ArgumentException)
         {
             return null;
         }
-        catch (SecurityTokenException ex)
+        catch (SecurityTokenException)
         {
             return null;
         }
