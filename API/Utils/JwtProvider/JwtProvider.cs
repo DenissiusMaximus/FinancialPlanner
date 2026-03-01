@@ -10,6 +10,9 @@ namespace API.Utils.JwtProvider;
 
 public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : IJwtProvider
 {
+    public string GenerateDevAccessToken(int id)
+        => GenerateToken(id, () => DateTime.UtcNow.AddYears(100), options.Value.SecretAccess);
+    
     public string GenerateAccessToken(int id)
         => GenerateToken(id, () => DateTime.UtcNow.AddMinutes(15), options.Value.SecretAccess);
 

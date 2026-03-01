@@ -15,4 +15,10 @@ public static class UserPrincipalExtensions
 
         return null;
     }
+
+    public static int GetRequiredUserId(this ClaimsPrincipal user)
+    {
+        var userId = GetUserId(user) ?? throw new Exception("User ID not found in claims.");
+        return userId;
+    }
 }

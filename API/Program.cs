@@ -1,6 +1,7 @@
 using System.Text;
 using API;
 using API.Services;
+using API.Services.Category;
 using API.Services.Jwt;
 using API.Services.User;
 using API.Utils;
@@ -35,6 +36,8 @@ builder.Services.Decorate<IJwtService, JwtLoggingService>();
 
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Decorate<IUserService, UserLoggingService>();
+
+builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddHttpContextAccessor();
 

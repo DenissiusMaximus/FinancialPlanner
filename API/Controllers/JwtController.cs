@@ -20,4 +20,12 @@ public class JwtController(IJwtService jwtService) : ControllerBase
 
         return BadRequest("Invalid refresh token");
     }
+
+    [HttpPost("devToken")]
+    public async Task<IActionResult> GenerateDevToken(int userId)
+    {
+        var devToken = jwtService.GenerateDevAccessToken(userId);
+
+        return Ok(devToken);
+    }
 }

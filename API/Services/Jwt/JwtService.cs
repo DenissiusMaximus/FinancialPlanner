@@ -1,10 +1,14 @@
-using API.Models;
 using API.Utils.JwtProvider;
 
 namespace API.Services.Jwt;
 
 public class JwtService(IJwtProvider jwtProvider, AppDbContext context) : IJwtService
 {
+    public async Task<string> GenerateDevAccessToken(int id)
+    {
+        return jwtProvider.GenerateDevAccessToken(id);
+    }
+
     public Task<string?> RefreshToken(string refreshToken)
     {
         return jwtProvider.RefreshToken(refreshToken);
