@@ -21,11 +21,42 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     }
 
     [Authorize]
+    [HttpGet("{id}")]
+    public async Task<ActionResult<CategoryDto>> GetById(int id)
+    {
+        var userId = User.GetRequiredUserId();
+        var category = await categoryService.GetCategoryById(id, userId);
+
+        if (category == null)
+            return NotFound();
+
+        return category;
+    }
+
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<bool>> Create(CategoryInput input)
     {
         var userId = User.GetRequiredUserId();
 
         return await categoryService.CreateCategory(input, userId);
+    }
+
+    [Authorize]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<bool>> Update(int id, CategoryInput input)
+    {
+        var userId = User.GetRequiredUserId();
+
+        return await categoryService.UpdateCategory(id, input, userId);
+    }
+
+    [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<bool>> Delete(int id)
+    {
+        var userId = User.GetRequiredUserId();
+
+        return await categoryService.DeleteCategory(id, userId);
     }
 }

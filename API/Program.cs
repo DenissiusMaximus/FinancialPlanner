@@ -3,6 +3,7 @@ using API;
 using API.Services;
 using API.Services.Category;
 using API.Services.Jwt;
+using API.Services.Logging;
 using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
@@ -38,6 +39,7 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Decorate<IUserService, UserLoggingService>();
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
+builder.Services.Decorate<ICategoryService, CategoryLoggingService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -52,14 +54,13 @@ builder.Services.AddSwaggerGen(options =>
         Scheme = "Bearer",
         BearerFormat = "JWT",
         In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme"
+        Description = "JWT Authorization header using the Bearer scheme",
     });
 
     options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
     {
         {
             new OpenApiSecuritySchemeReference("Bearer", document),
-
             new List<string>()
         }
     });

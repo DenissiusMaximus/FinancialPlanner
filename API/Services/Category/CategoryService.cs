@@ -11,17 +11,17 @@ public class CategoryService(AppDbContext context) : ICategoryService
     {
         var rawCategories = context.Categories.Where(c => c.UserId == userId);
 
-        return rawCategories.Select(c => new CategoryDto
+        return await rawCategories.Select(c => new CategoryDto
         {
             Id = c.Id,
             Name = c.Name,
             UserId = c.UserId
-        }).ToList();
+        }).ToListAsync();
     }
 
     public async Task<CategoryDto?> GetCategoryById(int id, int userId)
     {
-        var category = context.Categories.FirstOrDefault(c => c.Id == id && c.UserId == userId);
+        var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (category == null)
         {

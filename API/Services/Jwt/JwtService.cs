@@ -4,6 +4,7 @@ namespace API.Services.Jwt;
 
 public class JwtService(IJwtProvider jwtProvider, AppDbContext context) : IJwtService
 {
+    // DEV ONLY
     public async Task<string> GenerateDevAccessToken(int id)
     {
         return jwtProvider.GenerateDevAccessToken(id);
