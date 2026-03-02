@@ -28,9 +28,9 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
         return result;
     }
 
-    public async Task<bool> Logout(string refreshToken)
+    public async Task<bool> LogoutUser(string refreshToken)
     {
-        var result = await innerService.Logout(refreshToken);
+        var result = await innerService.LogoutUser(refreshToken);
 
         if(result)
             logger.LogInformation("User logged out.");

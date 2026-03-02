@@ -36,7 +36,7 @@ public class CategoryService(AppDbContext context) : ICategoryService
         };
     }
 
-    public async Task<bool> CreateCategory(CategoryInput input, int userId)
+    public async Task<CategoryDto?> CreateCategory(CategoryInput input, int userId)
     {
         var category = new Models.Category
         {
@@ -44,24 +44,40 @@ public class CategoryService(AppDbContext context) : ICategoryService
             UserId = userId
         };
 
-        await context.Categories.AddAsync(category);
-        var result = await context.SaveChangesAsync();
+        var result = await context.Categories.AddAsync(category);
+        if(await context.SaveChangesAsync() > 0)
+            return new CategoryDto
+            {
+                Id = result.Entity.Id,
+                Name = result.Entity.Name,
+                UserId = result.Entity.UserId
+            };
 
-        return result > 0;
+        return null;
     }
 
-    public async Task<bool> UpdateCategory(int id, CategoryInput input, int userId)
+    public async Task<CategoryDto?> UpdateCategory(int id, CategoryInput input, int userId)
     {
         var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (category == null)
-            return false;
+            return null;
 
         category.Name = input.Name;
 
         var result = await context.SaveChangesAsync();
 
-        return result > 0;
+        if (result > 0)
+        {
+            return new CategoryDto
+            {
+                Id = category.Id,
+                Name = category.Name,
+                UserId = category.UserId
+            };
+        }
+
+        return null;
     }
 
     public async Task<bool> DeleteCategory(int id, int userId)

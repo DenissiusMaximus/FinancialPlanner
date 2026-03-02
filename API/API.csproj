@@ -26,12 +26,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="Dtos\" />
     <Folder Include="Extensions\" />
     <Folder Include="Filter\" />
     <Folder Include="logs\" />
     <Folder Include="Models\" />
     <Folder Include="Services\Category\" />
+    <Folder Include="Services\Source\" />
     <Folder Include="Utils\ExceptionHandler\" />
     <Folder Include="Validators\" />
   </ItemGroup>

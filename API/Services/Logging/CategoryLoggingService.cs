@@ -7,12 +7,12 @@ namespace API.Services.Logging;
 
 public class CategoryLoggingService(ICategoryService innerService, ILogger<CategoryLoggingService> logger) : ICategoryService
 {
-    public async Task<bool> CreateCategory(CategoryInput input, int userId)
+    public async Task<CategoryDto?> CreateCategory(CategoryInput input, int userId)
     {
         var result = await innerService.CreateCategory(input, userId);
 
-        if(result)
-            logger.LogInformation("Category {CategoryName} created successfully for user {UserId}", input.Name, userId);
+        if(result != null)
+            logger.LogInformation("Category {CategoryId} created successfully for user {UserId}", result.Id, userId);
         else
             logger.LogWarning("Failed to create category {CategoryName} for user {UserId}", input.Name, userId);
 
@@ -41,11 +41,11 @@ public class CategoryLoggingService(ICategoryService innerService, ILogger<Categ
         return await innerService.GetCategoryById(id, userId);;
     }
 
-    public async Task<bool> UpdateCategory(int id, CategoryInput input, int userId)
+    public async Task<CategoryDto?> UpdateCategory(int id, CategoryInput input, int userId)
     {
         var result = await innerService.UpdateCategory(id, input, userId);
 
-        if(result)
+        if(result != null)
             logger.LogInformation("Category with ID {CategoryId} updated successfully for user {UserId}", id, userId);
         else
             logger.LogWarning("Failed to update category with ID {CategoryId} for user {UserId}", id, userId);

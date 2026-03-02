@@ -35,11 +35,16 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<bool>> Create(CategoryInput input)
+    public async Task<ActionResult<CategoryDto>> Create(CategoryInput input)
     {
         var userId = User.GetRequiredUserId();
 
-        return await categoryService.CreateCategory(input, userId);
+        var result = await categoryService.CreateCategory(input, userId);
+
+        if(result == null)
+            return BadRequest("Failed to create category");
+
+        return Ok(result);
     }
 
     [Authorize]
@@ -48,7 +53,12 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     {
         var userId = User.GetRequiredUserId();
 
-        return await categoryService.UpdateCategory(id, input, userId);
+        var result = await categoryService.UpdateCategory(id, input, userId);
+
+        if (result == null)
+            return BadRequest("Failed to update category");
+
+        return Ok(result);
     }
 
     [Authorize]
