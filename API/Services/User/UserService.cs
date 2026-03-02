@@ -59,7 +59,7 @@ public class UserService(AppDbContext context, IPasswordHasher passwordHasher, I
         };
     }
 
-    public async Task<bool> Logout(string refreshToken)
+    public async Task<bool> LogoutUser(string refreshToken)
     {
         return await jwtProvider.AddTokenToBlacklist(refreshToken);
     }

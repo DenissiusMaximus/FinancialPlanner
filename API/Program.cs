@@ -4,6 +4,7 @@ using API.Services;
 using API.Services.Category;
 using API.Services.Jwt;
 using API.Services.Logging;
+using API.Services.Source;
 using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
@@ -40,6 +41,9 @@ builder.Services.Decorate<IUserService, UserLoggingService>();
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.Decorate<ICategoryService, CategoryLoggingService>();
+
+builder.Services.AddScoped<ISourceService, SourceService>();
+builder.Services.Decorate<ISourceService, SourceLoggingService>();
 
 builder.Services.AddHttpContextAccessor();
 
