@@ -1,5 +1,4 @@
 using API.Dtos;
-using API.Filter;
 using API.Inputs;
 using API.Services;
 using Microsoft.AspNetCore.Authorization;
@@ -11,7 +10,6 @@ namespace API.Controllers;
 [ApiController]
 public class UserController(IUserService userService) : ControllerBase
 {
-    [TypeFilter(typeof(ValidationFilter<CreateUserInput>))]
     [HttpPost("register")]
     public async Task<ActionResult<AuthUserDto?>> Register(CreateUserInput input)
     {
@@ -23,7 +21,6 @@ public class UserController(IUserService userService) : ControllerBase
         return Ok(result);
     }
 
-    [TypeFilter(typeof(ValidationFilter<LoginUserInput>))]
     [HttpPost("login")]
     public async Task<ActionResult<AuthUserDto?>> Login(LoginUserInput input)
     {

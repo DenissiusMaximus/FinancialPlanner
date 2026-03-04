@@ -15,6 +15,8 @@ public partial class Source
 
     public int CurrencyId { get; set; }
 
+    public bool IsArchived { get; set; } = false;
+
     public virtual Currency Currency { get; set; } = null!;
 
     public virtual ICollection<PlannedTransaction> PlannedTransactions { get; set; } = new List<PlannedTransaction>();

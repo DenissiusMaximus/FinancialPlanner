@@ -1,7 +1,7 @@
 using API.Dtos;
 using API.Extensions;
-using API.Filter;
 using API.Services.Source;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
@@ -11,6 +11,7 @@ namespace API.Controllers;
 [ApiController]
 public class SourceController(ISourceService sourceService) : ControllerBase
 {
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<SourceDto>>> Get()
     {
@@ -21,6 +22,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<SourceDto>> GetById(int id)
     {
@@ -34,7 +36,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
-    [TypeFilter(typeof(ValidationFilter<CreateSourceInput>))]
+    [Authorize]
     [HttpPost]
     public async Task<ActionResult<SourceDto>> Create(CreateSourceInput input)
     {
@@ -48,7 +50,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
-    [TypeFilter(typeof(ValidationFilter<UpdateSourceInput>))]
+    [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<SourceDto>> Update(int id, UpdateSourceInput input)
     {
@@ -62,16 +64,31 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
-    [HttpDelete("{id}")]
-    public async Task<ActionResult> Delete(int id)
+    [Authorize]
+    [HttpPut("archive/{id}")]
+    public async Task<ActionResult> Archive(int id)
     {
         var userId = User.GetRequiredUserId();
 
-        var result = await sourceService.DeleteSource(id, userId);
+        var result = await sourceService.ArchiveSource(id, userId);
 
-        if (!result)
-            return BadRequest("Failed to delete source");
+        if (result == null)
+            return BadRequest("Failed to archive source");
 
-        return Ok();
+        return Ok(result);
+    }
+
+    [Authorize]
+    [HttpPost("unarchive/{id}")]
+    public async Task<ActionResult> UnArchive(int id)
+    {
+        var userId = User.GetRequiredUserId();
+
+        var result = await sourceService.UnArchiveSource(id, userId);
+
+        if (result == null)
+            return BadRequest("Failed to unarchive source");
+
+        return Ok(result);
     }
 }

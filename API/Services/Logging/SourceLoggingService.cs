@@ -18,14 +18,14 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
         return result;
     }
 
-    public async Task<bool> DeleteSource(int sourceId, int userId)
+    public async Task<SourceDto?> ArchiveSource(int sourceId, int userId)
     {
-        var result = await innerService.DeleteSource(sourceId, userId);
+        var result = await innerService.ArchiveSource(sourceId, userId);
 
-        if (result)
-            logger.LogInformation("Source {SourceId} deleted successfully for user {UserId}", sourceId, userId);
+        if (result != null)
+            logger.LogInformation("Source {SourceId} archived successfully for user {UserId}", sourceId, userId);
         else
-            logger.LogWarning("Failed to delete source {SourceId} for user {UserId}", sourceId, userId);
+            logger.LogWarning("Failed to archive source {SourceId} for user {UserId}", sourceId, userId);
 
         return result;
     }
@@ -44,6 +44,18 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
             logger.LogInformation("Source {SourceId} updated successfully for user {UserId}", sourceId, userId);
         else
             logger.LogWarning("Failed to update source {SourceId} for user {UserId}", sourceId, userId);
+
+        return result;
+    }
+
+    public async Task<SourceDto?> UnArchiveSource(int sourceId, int userId)
+    {
+        var result = await innerService.UnArchiveSource(sourceId, userId);
+
+        if (result != null)
+            logger.LogInformation("Source {SourceId} unarchived successfully for user {UserId}", sourceId, userId);
+        else
+            logger.LogWarning("Failed to unarchive source {SourceId} for user {UserId}", sourceId, userId);
 
         return result;
     }

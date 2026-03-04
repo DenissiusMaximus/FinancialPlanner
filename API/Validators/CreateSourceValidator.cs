@@ -11,14 +11,9 @@ public class CreateSourceValidator : AbstractValidator<CreateSourceInput>
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required")
             .MaximumLength(100).WithMessage("Name must be at most 100 characters long");
-        
-        RuleFor(x => x.Name)
-            .NotEmpty().WithMessage("Name is required")
-            .MaximumLength(100).WithMessage("Name must be at most 100 characters long");
 
         RuleFor(x => x.Amount)
-            .NotEmpty().WithMessage("Amount is required")
-            .GreaterThan(0).WithMessage("Amount must be greater than 0");
+            .GreaterThan(-1).WithMessage("Amount must be non negative number");
         
         RuleFor(x => x.CurrencyId)
             .NotEmpty().WithMessage("CurrencyId is required")

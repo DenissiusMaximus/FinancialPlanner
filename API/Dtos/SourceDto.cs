@@ -13,4 +13,8 @@ public class SourceDto
     public int UserId { get; set; }
 
     public int CurrencyId { get; set; }
+
+    public string CurrencyName { get; set; }
+
+    public bool IsArchived { get; set; }
 }

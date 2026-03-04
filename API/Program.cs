@@ -15,6 +15,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi;
 using Serilog;
+using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +24,6 @@ builder.Host.UseSerilog(((context, configuration) => configuration
     .WriteTo.File("logs/log-.log", rollingInterval: RollingInterval.Day)
     .ReadFrom.Configuration(context.Configuration)
 ));
-
-builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -46,6 +45,10 @@ builder.Services.AddScoped<ISourceService, SourceService>();
 builder.Services.Decorate<ISourceService, SourceLoggingService>();
 
 builder.Services.AddHttpContextAccessor();
+
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
+
+builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
