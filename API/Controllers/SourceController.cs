@@ -1,5 +1,6 @@
 using API.Dtos;
 using API.Extensions;
+using API.Filter;
 using API.Services.Source;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -33,6 +34,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
+    [TypeFilter(typeof(ValidationFilter<CreateSourceInput>))]
     [HttpPost]
     public async Task<ActionResult<SourceDto>> Create(CreateSourceInput input)
     {
@@ -46,12 +48,13 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         return Ok(result);
     }
 
-    [HttpPut]
-    public async Task<ActionResult<SourceDto>> Update(UpdateSourceInput input)
+    [TypeFilter(typeof(ValidationFilter<UpdateSourceInput>))]
+    [HttpPut("{id}")]
+    public async Task<ActionResult<SourceDto>> Update(int id, UpdateSourceInput input)
     {
         var userId = User.GetRequiredUserId();
 
-        var result = await sourceService.UpdateSource(input.Id, input, userId);
+        var result = await sourceService.UpdateSource(id, input, userId);
 
         if (result == null)
             return BadRequest("Failed to update source");
