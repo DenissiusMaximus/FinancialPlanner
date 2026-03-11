@@ -3,6 +3,7 @@ using API;
 using API.Filters;
 using API.Services;
 using API.Services.Category;
+using API.Services.Frequency;
 using API.Services.Jwt;
 using API.Services.Source;
 using API.Services.User;
@@ -42,6 +43,8 @@ builder.Services.Decorate<IUserService, UserLoggingService>();
 builder.Services.AddScoped<ICategoryService, CategoryService>();
 
 builder.Services.AddScoped<ISourceService, SourceService>();
+
+builder.Services.AddScoped<IFrequencyService, FrequencyService>();
 
 builder.Services.AddHttpContextAccessor();
 

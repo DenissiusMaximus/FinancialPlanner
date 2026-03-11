@@ -33,7 +33,5 @@ public class NotificationFilter(NotificationContext notificationContext, ILogger
             
             return;
         }
-
-        await next();
     }
 }

@@ -17,6 +17,8 @@ public partial class User
 
     public virtual ICollection<Category> Categories { get; set; } = new List<Category>();
 
+    public virtual ICollection<Frequency> Frequencies { get; set; } = new List<Frequency>();
+
     public virtual ICollection<PlannedTransaction> PlannedTransactions { get; set; } = new List<PlannedTransaction>();
 
     public virtual ICollection<Source> Sources { get; set; } = new List<Source>();

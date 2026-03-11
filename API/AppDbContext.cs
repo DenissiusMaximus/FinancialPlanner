@@ -1,4 +1,6 @@
-﻿using API.Models;
+﻿using System;
+using System.Collections.Generic;
+using API.Models;
 using Microsoft.EntityFrameworkCore;
 
 namespace API;
@@ -23,6 +25,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<Currency> Currencies { get; set; }
 
     public virtual DbSet<Frequency> Frequencies { get; set; }
+
+    public virtual DbSet<IntervalUnit> IntervalUnits { get; set; }
 
     public virtual DbSet<PlannedTransaction> PlannedTransactions { get; set; }
 
@@ -98,6 +102,26 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
                 .IsUnicode(false);
+
+            entity.HasOne(d => d.IntervalUnitNavigation).WithMany(p => p.Frequencies)
+                .HasForeignKey(d => d.IntervalUnitId)
+                .OnDelete(DeleteBehavior.ClientSetNull)
+                .HasConstraintName("FK__Frequenci__Inter__03F0984C");
+
+            entity.HasOne(d => d.User).WithMany(p => p.Frequencies)
+                .HasForeignKey(d => d.UserId)
+                .HasConstraintName("FK__Frequenci__UserI__01142BA1");
+        });
+
+        modelBuilder.Entity<IntervalUnit>(entity =>
+        {
+            entity.HasKey(e => e.Id).HasName("PK__Interval__3213E83F513E4BBA");
+
+            entity.Property(e => e.Id).HasColumnName("id");
+            entity.Property(e => e.Name)
+                .HasMaxLength(255)
+                .IsUnicode(false)
+                .HasColumnName("name");
         });
 
         modelBuilder.Entity<PlannedTransaction>(entity =>

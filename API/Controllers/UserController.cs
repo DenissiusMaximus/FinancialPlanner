@@ -43,4 +43,12 @@ public class UserController(IUserService userService) : ControllerBase
 
         return Ok();
     }
+
+    [HttpGet("email-available")]
+    public async Task<ActionResult<bool>> IsEmailAvailable(string email)
+    {
+        var result = await userService.IsEmailAvailable(email);
+
+        return Ok(result);
+    }
 }   

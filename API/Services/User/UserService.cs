@@ -35,6 +35,11 @@ public class UserService(AppDbContext context, IPasswordHasher passwordHasher, I
         };
     }
 
+    public async Task<bool> IsEmailAvailable(string email)
+    {
+        return !await context.Users.AsNoTracking().AnyAsync(u => u.Email == email);
+    }
+
     public async Task<AuthUserDto?> LoginUser(string email, string password)
     {
         var user = await context.Users.FirstOrDefaultAsync(u => email == u.Email);

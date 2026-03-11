@@ -15,7 +15,7 @@ public partial class Source
 
     public int CurrencyId { get; set; }
 
-    public bool IsArchived { get; set; } = false;
+    public bool IsArchived { get; set; }
 
     public virtual Currency Currency { get; set; } = null!;
 

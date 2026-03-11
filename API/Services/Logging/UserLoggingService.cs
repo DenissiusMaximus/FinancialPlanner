@@ -14,6 +14,11 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
         return result;
     }
 
+    public Task<bool> IsEmailAvailable(string email)
+    {
+        return innerService.IsEmailAvailable(email);
+    }
+
     public async Task<AuthUserDto?> LoginUser(string email, string password)
     {
         var result = await innerService.LoginUser(email, password);
