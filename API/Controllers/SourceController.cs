@@ -2,7 +2,6 @@ using API.Dtos;
 using API.Extensions;
 using API.Services.Source;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -45,7 +44,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         var result = await sourceService.CreateSource(input, userId);
 
         if (result == null)
-            return BadRequest("Failed to create source");
+            return NotFound("Failed to create source");
 
         return Ok(result);
     }
@@ -59,13 +58,13 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         var result = await sourceService.UpdateSource(id, input, userId);
 
         if (result == null)
-            return BadRequest("Failed to update source");
+            return NotFound("Failed to update source");
 
         return Ok(result);
     }
 
     [Authorize]
-    [HttpPut("archive/{id}")]
+    [HttpPatch("archive/{id}")]
     public async Task<ActionResult> Archive(int id)
     {
         var userId = User.GetRequiredUserId();
@@ -73,13 +72,13 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         var result = await sourceService.ArchiveSource(id, userId);
 
         if (result == null)
-            return BadRequest("Failed to archive source");
+            return NotFound("Failed to archive source");
 
         return Ok(result);
     }
 
     [Authorize]
-    [HttpPost("unarchive/{id}")]
+    [HttpPatch("unarchive/{id}")]
     public async Task<ActionResult> UnArchive(int id)
     {
         var userId = User.GetRequiredUserId();
@@ -87,7 +86,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
         var result = await sourceService.UnArchiveSource(id, userId);
 
         if (result == null)
-            return BadRequest("Failed to unarchive source");
+            return NotFound("Failed to unarchive source");
 
         return Ok(result);
     }

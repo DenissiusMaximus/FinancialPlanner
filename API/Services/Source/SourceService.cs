@@ -1,12 +1,13 @@
 using System;
 using API.Dtos;
+using API.Utils.Notification;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Source;
 
-public class SourceService(AppDbContext context) : ISourceService
+public class SourceService(AppDbContext context, NotificationContext notificationContext) : ISourceService
 {
-        public async Task<SourceDto?> GetSourceById(int sourceId, int userId)
+    public async Task<SourceDto?> GetSourceById(int sourceId, int userId)
     {
         var source = await context.Sources
             .Include(s => s.Currency)
@@ -21,9 +22,9 @@ public class SourceService(AppDbContext context) : ISourceService
     {
         var result = await context.Sources
             .Include(s => s.Currency)
-            .Where(s => s.UserId == userId && !s.IsArchived) 
+            .Where(s => s.UserId == userId && !s.IsArchived)
             .Select(s => CreateSourceDto(s))
-            .ToListAsync(); 
+            .ToListAsync();
 
         return result;
     }
@@ -33,7 +34,10 @@ public class SourceService(AppDbContext context) : ISourceService
         var currency = await context.Currencies.FirstOrDefaultAsync(c => c.Id == createSourceDto.CurrencyId);
 
         if (currency == null)
+        {
+            notificationContext.AddNotification("Currency not found", ErrorType.NotFound);
             return null;
+        }
 
         var source = new Models.Source
         {
@@ -47,38 +51,56 @@ public class SourceService(AppDbContext context) : ISourceService
 
         var result = context.Sources.Add(source);
 
-        if (await context.SaveChangesAsync() > 0)
-            return CreateSourceDto(result.Entity);
+        if (await context.SaveChangesAsync() <= 0)
+        {
+            notificationContext.AddNotification("Failed to create source", ErrorType.BadRequest);
+            return null;
+        }
 
-        return null;
+        return CreateSourceDto(result.Entity);
     }
 
     public async Task<SourceDto?> ArchiveSource(int sourceId, int userId)
     {
-        var source = await context.Sources.Include(s => s.Currency).FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
+        var source = await context.Sources.Include(s => s.Currency)
+            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
+        {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
+        }
 
         source.IsArchived = true;
-        if (await context.SaveChangesAsync() > 0)
-            return CreateSourceDto(source);
-        
-        return null;
+        if (await context.SaveChangesAsync() <= 0)
+        {
+            notificationContext.AddNotification("Failed to archive source", ErrorType.BadRequest);
+            return null;
+        }
+
+        return CreateSourceDto(source);
     }
 
     public async Task<SourceDto?> UnArchiveSource(int sourceId, int userId)
     {
-        var source = await context.Sources.Include(s => s.Currency).FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
+        var source = await context.Sources.Include(s => s.Currency)
+            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
+        {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
+        }
 
         source.IsArchived = false;
-        if (await context.SaveChangesAsync() > 0)
-            return CreateSourceDto(source);
-        
-        return null;
+
+        if (await context.SaveChangesAsync() <= 0)
+        {
+            notificationContext.AddNotification("Failed to unarchive source", ErrorType.BadRequest);
+            return null;
+        }
+
+        return CreateSourceDto(source);
     }
 
     public async Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto, int userId)
@@ -87,15 +109,21 @@ public class SourceService(AppDbContext context) : ISourceService
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
+        {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
+        }
 
         if (updateSourceDto.Name != null)
             source.Name = updateSourceDto.Name;
 
-        if (await context.SaveChangesAsync() > 0)
-            return CreateSourceDto(source);
+        if (await context.SaveChangesAsync() <= 0)
+        {
+            notificationContext.AddNotification("Failed to update source", ErrorType.BadRequest);
+            return null;
+        }
 
-        return null;
+        return CreateSourceDto(source);
     }
 
     private static SourceDto CreateSourceDto(Models.Source source)

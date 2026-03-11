@@ -42,21 +42,21 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
         var result = await categoryService.CreateCategory(input, userId);
 
         if(result == null)
-            return BadRequest("Failed to create category");
+            return NotFound("Failed to create category");
 
         return Ok(result);
     }
 
     [Authorize]
     [HttpPut("{id}")]
-    public async Task<ActionResult<bool>> Update(int id, CategoryInput input)
+    public async Task<ActionResult<CategoryDto>> Update(int id, CategoryInput input)
     {
         var userId = User.GetRequiredUserId();
 
         var result = await categoryService.UpdateCategory(id, input, userId);
 
         if (result == null)
-            return BadRequest("Failed to update category");
+            return NotFound("Failed to update category");
 
         return Ok(result);
     }

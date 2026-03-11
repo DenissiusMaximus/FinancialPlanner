@@ -1,11 +1,12 @@
 using System;
 using API.Dtos;
 using API.Inputs;
+using API.Utils.Notification;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Category;
 
-public class CategoryService(AppDbContext context) : ICategoryService
+public class CategoryService(AppDbContext context, NotificationContext notificationContext) : ICategoryService
 {
     public async Task<List<CategoryDto>> GetCategories(int userId)
     {
@@ -25,6 +26,7 @@ public class CategoryService(AppDbContext context) : ICategoryService
 
         if (category == null)
         {
+            notificationContext.AddNotification("Category not found", ErrorType.NotFound);
             return null;
         }
 
@@ -44,16 +46,20 @@ public class CategoryService(AppDbContext context) : ICategoryService
             UserId = userId
         };
 
-        var result = await context.Categories.AddAsync(category);
-        if(await context.SaveChangesAsync() > 0)
-            return new CategoryDto
-            {
-                Id = result.Entity.Id,
-                Name = result.Entity.Name,
-                UserId = result.Entity.UserId
-            };
+        var result = context.Categories.Add(category);
 
-        return null;
+        if (await context.SaveChangesAsync() <= 0)
+        {
+            notificationContext.AddNotification("Failed to create category", ErrorType.BadRequest);
+            return null;
+        }
+
+        return new CategoryDto
+        {
+            Id = result.Entity.Id,
+            Name = result.Entity.Name,
+            UserId = result.Entity.UserId
+        };
     }
 
     public async Task<CategoryDto?> UpdateCategory(int id, CategoryInput input, int userId)
@@ -61,23 +67,25 @@ public class CategoryService(AppDbContext context) : ICategoryService
         var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (category == null)
+        {
+            notificationContext.AddNotification("Category not found", ErrorType.NotFound);
             return null;
+        }
 
         category.Name = input.Name;
 
-        var result = await context.SaveChangesAsync();
-
-        if (result > 0)
+        if (await context.SaveChangesAsync() <= 0)
         {
-            return new CategoryDto
-            {
-                Id = category.Id,
-                Name = category.Name,
-                UserId = category.UserId
-            };
+            notificationContext.AddNotification("Failed to update category", ErrorType.BadRequest);
+            return null;
         }
 
-        return null;
+        return new CategoryDto
+        {
+            Id = category.Id,
+            Name = category.Name,
+            UserId = category.UserId
+        };
     }
 
     public async Task<bool> DeleteCategory(int id, int userId)
@@ -85,11 +93,13 @@ public class CategoryService(AppDbContext context) : ICategoryService
         var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (category == null)
+        {
+            notificationContext.AddNotification("Category not found", ErrorType.NotFound);
             return false;
+        }
 
         context.Categories.Remove(category);
-        var result = await context.SaveChangesAsync();
 
-        return result > 0;
+        return await context.SaveChangesAsync() > 0;
     }
 }

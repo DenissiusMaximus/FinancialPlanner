@@ -12,8 +12,6 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
 
         if (result != null)
             logger.LogInformation("Source {SourceId} created successfully for user {UserId}", result.Id, userId);
-        else
-            logger.LogWarning("Failed to create source {SourceName} for user {UserId}", createSourceDto.Name, userId);
 
         return result;
     }
@@ -24,8 +22,6 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
 
         if (result != null)
             logger.LogInformation("Source {SourceId} archived successfully for user {UserId}", sourceId, userId);
-        else
-            logger.LogWarning("Failed to archive source {SourceId} for user {UserId}", sourceId, userId);
 
         return result;
     }
@@ -42,8 +38,6 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
 
         if (result != null)
             logger.LogInformation("Source {SourceId} updated successfully for user {UserId}", sourceId, userId);
-        else
-            logger.LogWarning("Failed to update source {SourceId} for user {UserId}", sourceId, userId);
 
         return result;
     }
@@ -54,8 +48,6 @@ public class SourceLoggingService(ISourceService innerService, ILogger<SourceLog
 
         if (result != null)
             logger.LogInformation("Source {SourceId} unarchived successfully for user {UserId}", sourceId, userId);
-        else
-            logger.LogWarning("Failed to unarchive source {SourceId} for user {UserId}", sourceId, userId);
 
         return result;
     }

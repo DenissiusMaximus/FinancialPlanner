@@ -1,5 +1,6 @@
 using System.Text;
 using API;
+using API.Filters;
 using API.Services;
 using API.Services.Category;
 using API.Services.Jwt;
@@ -9,6 +10,7 @@ using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
 using API.Utils.JwtProvider;
+using API.Utils.Notification;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -20,10 +22,10 @@ using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Host.UseSerilog(((context, configuration) => configuration
-    .WriteTo.Console()
-    .WriteTo.File("logs/log-.log", rollingInterval: RollingInterval.Day)
-    .ReadFrom.Configuration(context.Configuration)
-));
+        .WriteTo.Console()
+        .WriteTo.File("logs/log-.log", rollingInterval: RollingInterval.Day)
+        .ReadFrom.Configuration(context.Configuration)
+    ));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
@@ -50,7 +52,10 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 builder.Services.AddFluentValidationAutoValidation();
 
-builder.Services.AddControllers();
+builder.Services.AddScoped<NotificationContext>();
+
+builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });
+
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(options =>
 {

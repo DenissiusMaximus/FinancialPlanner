@@ -10,8 +10,6 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
         
         if(result != null)
             logger.LogInformation("User created with email: {Email}", email);
-        else
-            logger.LogWarning("Failed to create user with email: {Email}", email);
 
         return result;
     }
@@ -22,8 +20,6 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
     
         if(result != null)
             logger.LogInformation("User logged in with email: {Email}", email);
-        else
-            logger.LogWarning("Failed to log in user with email: {Email}", email);
 
         return result;
     }
@@ -34,8 +30,6 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
 
         if(result)
             logger.LogInformation("User logged out.");
-        else            
-            logger.LogWarning("Failed to log out user");
         
         return result;
     }
