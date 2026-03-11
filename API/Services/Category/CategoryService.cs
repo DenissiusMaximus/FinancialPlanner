@@ -12,7 +12,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
     {
         var rawCategories = context.Categories.Where(c => c.UserId == userId);
 
-        return await rawCategories.Select(c => new CategoryDto
+        return await rawCategories.AsNoTracking().Select(c => new CategoryDto
         {
             Id = c.Id,
             Name = c.Name,
@@ -22,7 +22,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
 
     public async Task<CategoryDto?> GetCategoryById(int id, int userId)
     {
-        var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
+        var category = await context.Categories.AsNoTracking().FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
 
         if (category == null)
         {
@@ -48,11 +48,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
 
         var result = context.Categories.Add(category);
 
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to create category", ErrorType.BadRequest);
-            return null;
-        }
+        await context.SaveChangesAsync();
 
         return new CategoryDto
         {
@@ -74,11 +70,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
 
         category.Name = input.Name;
 
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to update category", ErrorType.BadRequest);
-            return null;
-        }
+        await context.SaveChangesAsync();
 
         return new CategoryDto
         {

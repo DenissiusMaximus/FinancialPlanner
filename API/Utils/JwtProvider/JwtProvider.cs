@@ -15,10 +15,10 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
         => GenerateToken(id, () => DateTime.UtcNow.AddYears(100), options.Value.SecretAccess);
     
     public string GenerateAccessToken(int id)
-        => GenerateToken(id, () => DateTime.UtcNow.AddMinutes(15), options.Value.SecretAccess);
+        => GenerateToken(id, () => DateTime.UtcNow.Add(options.Value.AccessTokenExpiration), options.Value.SecretAccess);
 
     public string GenerateRefreshToken(int id)
-        => GenerateToken(id, () => DateTime.UtcNow.AddDays(30), options.Value.SecretRefresh);
+        => GenerateToken(id, () => DateTime.UtcNow.Add(options.Value.RefreshTokenExpiration), options.Value.SecretRefresh);
 
     public async Task<string?> RefreshToken(string token)
     {
@@ -32,7 +32,7 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
         if (checkTokenBlacklisted)
             return null;
 
-        return GenerateToken(result.Value.userId, () => DateTime.UtcNow.AddDays(30), options.Value.SecretRefresh);
+        return GenerateToken(result.Value.userId, () => DateTime.UtcNow.Add(options.Value.AccessTokenExpiration), options.Value.SecretAccess);
     }
 
     public async Task<bool> AddTokenToBlacklist(string token)

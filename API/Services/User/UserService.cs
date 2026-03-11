@@ -23,9 +23,7 @@ public class UserService(AppDbContext context, IPasswordHasher passwordHasher, I
             return null;
 
         var createdUser = await context.Users.AddAsync(user);
-        var res = await context.SaveChangesAsync();
-        if (res == 0)
-            return null;
+        await context.SaveChangesAsync();
 
         var accessToken = jwtProvider.GenerateAccessToken(createdUser.Entity.Id);
         var refreshToken = jwtProvider.GenerateRefreshToken(createdUser.Entity.Id);

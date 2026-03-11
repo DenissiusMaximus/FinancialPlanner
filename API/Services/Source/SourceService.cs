@@ -10,6 +10,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
     public async Task<SourceDto?> GetSourceById(int sourceId, int userId)
     {
         var source = await context.Sources
+            .AsNoTracking()
             .Include(s => s.Currency)
             .Where(s => s.Id == sourceId && s.UserId == userId)
             .Select(s => CreateSourceDto(s))
@@ -21,6 +22,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
     public async Task<List<SourceDto>> GetSources(int userId)
     {
         var result = await context.Sources
+                .AsNoTracking()
             .Include(s => s.Currency)
             .Where(s => s.UserId == userId && !s.IsArchived)
             .Select(s => CreateSourceDto(s))
@@ -51,12 +53,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
 
         var result = context.Sources.Add(source);
 
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to create source", ErrorType.BadRequest);
-            return null;
-        }
-
+        await context.SaveChangesAsync();
         return CreateSourceDto(result.Entity);
     }
 
@@ -72,11 +69,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         }
 
         source.IsArchived = true;
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to archive source", ErrorType.BadRequest);
-            return null;
-        }
+        await context.SaveChangesAsync();
 
         return CreateSourceDto(source);
     }
@@ -94,11 +87,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
 
         source.IsArchived = false;
 
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to unarchive source", ErrorType.BadRequest);
-            return null;
-        }
+        await context.SaveChangesAsync();
 
         return CreateSourceDto(source);
     }
@@ -117,11 +106,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         if (updateSourceDto.Name != null)
             source.Name = updateSourceDto.Name;
 
-        if (await context.SaveChangesAsync() <= 0)
-        {
-            notificationContext.AddNotification("Failed to update source", ErrorType.BadRequest);
-            return null;
-        }
+        await context.SaveChangesAsync();
 
         return CreateSourceDto(source);
     }

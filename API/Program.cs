@@ -54,26 +54,8 @@ builder.Services.AddScoped<NotificationContext>();
 builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });
 
 builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(options =>
-{
-    options.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Name = "Authorization",
-        Type = SecuritySchemeType.Http,
-        Scheme = "Bearer",
-        BearerFormat = "JWT",
-        In = ParameterLocation.Header,
-        Description = "JWT Authorization header using the Bearer scheme",
-    });
 
-    options.AddSecurityRequirement(document => new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecuritySchemeReference("Bearer", document),
-            new List<string>()
-        }
-    });
-});
+builder.Services.AddSwaggerGen();
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>
@@ -97,6 +79,24 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
+if (app.Environment.IsDevelopment())
+{
+    using var scope = app.Services.CreateScope();
+    var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
+
+    var devToken = jwtService.GenerateDevAccessToken(1).GetAwaiter().GetResult();
+
+    app.Use(async (context, next) =>
+    {
+        if (!context.Request.Headers.ContainsKey("Authorization"))
+        {
+            context.Request.Headers.Append("Authorization", $"Bearer {devToken}");
+        }
+
+        await next();
+    });
+}
+
 app.UseExceptionHandler();
 
 app.UseSerilogRequestLogging();
@@ -111,7 +111,6 @@ if (app.Environment.IsDevelopment())
 }
 
 app.MapControllers();
-
 
 app.Map("/ui", () => Results.Redirect("/swagger/index.html"));
 
