@@ -18,7 +18,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.GetSources(userId);
 
-        return Ok(result);
+        return result;
     }
 
     [Authorize]
@@ -29,10 +29,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.GetSourceById(id, userId);
 
-        if (result == null)
-            return NotFound();
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
@@ -43,10 +40,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.CreateSource(input, userId);
 
-        if (result == null)
-            return NotFound("Failed to create source");
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
@@ -57,37 +51,28 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.UpdateSource(id, input, userId);
 
-        if (result == null)
-            return NotFound("Failed to update source");
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
     [HttpPatch("archive/{id}")]
-    public async Task<ActionResult> Archive(int id)
+    public async Task<ActionResult<SourceDto>> Archive(int id)
     {
         var userId = User.GetRequiredUserId();
 
         var result = await sourceService.ArchiveSource(id, userId);
 
-        if (result == null)
-            return NotFound("Failed to archive source");
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
     [HttpPatch("unarchive/{id}")]
-    public async Task<ActionResult> UnArchive(int id)
+    public async Task<ActionResult<SourceDto>> UnArchive(int id)
     {
         var userId = User.GetRequiredUserId();
 
         var result = await sourceService.UnArchiveSource(id, userId);
 
-        if (result == null)
-            return NotFound("Failed to unarchive source");
-
-        return Ok(result);
+        return result!;
     }
 }

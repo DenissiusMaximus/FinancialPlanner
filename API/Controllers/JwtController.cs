@@ -12,11 +12,9 @@ public class JwtController(IJwtService jwtService) : ControllerBase
     {
         var newAccessToken = await jwtService.RefreshToken(refreshToken);
 
-        if (newAccessToken != null)
-        {
-            return Ok(newAccessToken);
-        }
+        if (newAccessToken == null) 
+            return BadRequest("Invalid refresh token");
 
-        return BadRequest("Invalid refresh token");
+        return Ok(newAccessToken);
     }
 }

@@ -25,12 +25,10 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     public async Task<ActionResult<CategoryDto>> GetById(int id)
     {
         var userId = User.GetRequiredUserId();
-        var category = await categoryService.GetCategoryById(id, userId);
 
-        if (category == null)
-            return NotFound();
+        var result = await categoryService.GetCategoryById(id, userId);
 
-        return category;
+        return result!;
     }
 
     [Authorize]
@@ -41,10 +39,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
         var result = await categoryService.CreateCategory(input, userId);
 
-        if(result == null)
-            return NotFound("Failed to create category");
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
@@ -55,10 +50,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
         var result = await categoryService.UpdateCategory(id, input, userId);
 
-        if (result == null)
-            return NotFound("Failed to update category");
-
-        return Ok(result);
+        return result!;
     }
 
     [Authorize]
