@@ -4,7 +4,6 @@ using API.Filters;
 using API.Services;
 using API.Services.Category;
 using API.Services.Jwt;
-using API.Services.Logging;
 using API.Services.Source;
 using API.Services.User;
 using API.Utils;
@@ -41,10 +40,8 @@ builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Decorate<IUserService, UserLoggingService>();
 
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-builder.Services.Decorate<ICategoryService, CategoryLoggingService>();
 
 builder.Services.AddScoped<ISourceService, SourceService>();
-builder.Services.Decorate<ISourceService, SourceLoggingService>();
 
 builder.Services.AddHttpContextAccessor();
 
@@ -101,6 +98,8 @@ builder.Services.AddProblemDetails();
 var app = builder.Build();
 
 app.UseExceptionHandler();
+
+app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();

@@ -29,7 +29,7 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
         var result = await innerService.LogoutUser(refreshToken);
 
         if(result)
-            logger.LogInformation("User logged out.");
+            logger.LogInformation("User logged out");
         
         return result;
     }
