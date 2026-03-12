@@ -3,7 +3,9 @@ using API;
 using API.Filters;
 using API.Services;
 using API.Services.Category;
+using API.Services.Currency;
 using API.Services.Frequency;
+using API.Services.InteralUnit;
 using API.Services.Jwt;
 using API.Services.Source;
 using API.Services.User;
@@ -15,7 +17,6 @@ using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
-using Microsoft.OpenApi;
 using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
@@ -45,6 +46,10 @@ builder.Services.AddScoped<ICategoryService, CategoryService>();
 builder.Services.AddScoped<ISourceService, SourceService>();
 
 builder.Services.AddScoped<IFrequencyService, FrequencyService>();
+
+builder.Services.AddScoped<IIntervalUnitService, IntervalUnitService>();
+
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
 builder.Services.AddHttpContextAccessor();
 

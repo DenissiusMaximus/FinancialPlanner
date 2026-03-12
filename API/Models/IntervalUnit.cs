@@ -11,3 +11,4 @@ public partial class IntervalUnit
 
     public virtual ICollection<Frequency> Frequencies { get; set; } = new List<Frequency>();
 }
+
