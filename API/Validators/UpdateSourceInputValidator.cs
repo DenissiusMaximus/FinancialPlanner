@@ -3,9 +3,9 @@ using FluentValidation;
 
 namespace API.Validators;
 
-public class UpdateSourceValidator : AbstractValidator<UpdateSourceInput>
+public class UpdateSourceInputValidator : AbstractValidator<UpdateSourceInput>
 {
-    public UpdateSourceValidator()
+    public UpdateSourceInputValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required")

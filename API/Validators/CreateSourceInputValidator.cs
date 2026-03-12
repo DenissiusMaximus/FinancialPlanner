@@ -4,9 +4,9 @@ using FluentValidation;
 
 namespace API.Validators;
 
-public class CreateSourceValidator : AbstractValidator<CreateSourceInput>
+public class CreateSourceInputValidator : AbstractValidator<CreateSourceInput>
 {
-    public CreateSourceValidator()
+    public CreateSourceInputValidator()
     {
         RuleFor(x => x.Name)
             .NotEmpty().WithMessage("Name is required")

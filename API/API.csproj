@@ -33,7 +33,6 @@
     <Folder Include="Services\Category\" />
     <Folder Include="Services\Source\" />
     <Folder Include="Utils\ExceptionHandler\" />
-    <Folder Include="Validators\" />
   </ItemGroup>
 
 </Project>
