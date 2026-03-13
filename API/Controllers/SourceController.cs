@@ -18,7 +18,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.GetSources(userId);
 
-        return result;
+        return Ok(result);
     }
 
     [Authorize]
@@ -29,7 +29,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.GetSourceById(id, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -40,7 +40,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.CreateSource(input, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -51,7 +51,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.UpdateSource(id, input, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -62,7 +62,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.ArchiveSource(id, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -73,6 +73,6 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 
         var result = await sourceService.UnArchiveSource(id, userId);
 
-        return result!;
+        return Ok(result);
     }
 }

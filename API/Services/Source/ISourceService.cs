@@ -8,6 +8,6 @@ public interface ISourceService
     Task<SourceDto?> ArchiveSource(int sourceId, int userId);
     Task<SourceDto?> UnArchiveSource(int sourceId, int userId);
     Task<SourceDto?> GetSourceById(int sourceId, int userId);
-    Task<List<SourceDto>> GetSources(int userId);
+    Task<IReadOnlyCollection<SourceDto>> GetSources(int userId);
     Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto, int userId);
 }

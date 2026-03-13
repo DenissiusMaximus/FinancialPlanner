@@ -8,7 +8,7 @@ namespace API.Services.Category;
 
 public class CategoryService(AppDbContext context, NotificationContext notificationContext) : ICategoryService
 {
-    public async Task<List<CategoryDto>> GetCategories(int userId)
+    public async Task<IReadOnlyCollection<CategoryDto>> GetCategories(int userId)
     {
         var rawCategories = context.Categories.Where(c => c.UserId == userId);
 

@@ -11,12 +11,12 @@ public class CurrencyController(ICurrencyService currencyService) : ControllerBa
     [HttpGet]
     public async Task<ActionResult<List<CurrencyDto>>> GetAllCurrencies()
     {
-        return await currencyService.GetAllCurrencies();
+        return Ok(await currencyService.GetAllCurrencies());
     }
 
     [HttpGet("{id}")]
     public async Task<ActionResult<CurrencyDto>> GetCurrencyById(int id)
     {
-        return (await currencyService.GetCurrencyById(id))!;
+        return Ok(await currencyService.GetCurrencyById(id));
     }
 }

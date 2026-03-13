@@ -6,7 +6,7 @@ namespace API.Services.Currency;
 
 public class CurrencyService(AppDbContext context, NotificationContext notificationContext) : ICurrencyService
 {
-    public async Task<List<CurrencyDto>> GetAllCurrencies()
+    public async Task<IReadOnlyCollection<CurrencyDto>> GetAllCurrencies()
     {
         var currencies = await context.Currencies.AsNoTracking().ToListAsync();
 

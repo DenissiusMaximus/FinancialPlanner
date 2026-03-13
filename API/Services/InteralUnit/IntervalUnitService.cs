@@ -6,7 +6,7 @@ namespace API.Services.InteralUnit;
 
 public class IntervalUnitService(AppDbContext context, NotificationContext notificationContext) : IIntervalUnitService
 {
-    public async Task<List<IntervalUnitDto>> GetIntervalUnits()
+    public async Task<IReadOnlyCollection<IntervalUnitDto>> GetIntervalUnits()
     {
         var intervalUnits = await context.IntervalUnits
             .AsNoTracking()

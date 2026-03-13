@@ -19,7 +19,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         return source;
     }
 
-    public async Task<List<SourceDto>> GetSources(int userId)
+    public async Task<IReadOnlyCollection<SourceDto>> GetSources(int userId)
     {
         var result = await context.Sources
                 .AsNoTracking()

@@ -45,7 +45,7 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         return await context.SaveChangesAsync() > 0;
     }
 
-    public async Task<List<FrequencyDto>> GetFrequencies(int userId)
+    public async Task<IReadOnlyCollection<FrequencyDto>> GetFrequencies(int userId)
     {
         var frequencies = await context.Frequencies
             .AsNoTracking()
@@ -73,7 +73,7 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         return CreateFrequencyDto(frequency);
     }
 
-    public async Task<List<FrequencyDto>> GetUserFrequencies(int userId)
+    public async Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies(int userId)
     {
         var frequencies = context.Frequencies
             .AsNoTracking()

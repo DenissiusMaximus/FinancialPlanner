@@ -17,7 +17,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     {
         var userId = User.GetRequiredUserId();
         
-        return await categoryService.GetCategories(userId);
+        return Ok(await categoryService.GetCategories(userId));
     }
 
     [Authorize]
@@ -28,7 +28,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
         var result = await categoryService.GetCategoryById(id, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -39,7 +39,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
         var result = await categoryService.CreateCategory(input, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -50,7 +50,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
         var result = await categoryService.UpdateCategory(id, input, userId);
 
-        return result!;
+        return Ok(result);
     }
 
     [Authorize]
@@ -59,6 +59,6 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     {
         var userId = User.GetRequiredUserId();
 
-        return await categoryService.DeleteCategory(id, userId);
+        return Ok(await categoryService.DeleteCategory(id, userId));
     }
 }

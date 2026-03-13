@@ -17,7 +17,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
     {
         var userId = User.GetRequiredUserId();
 
-        return await frequencyService.GetFrequencies(userId);
+        return Ok(await frequencyService.GetFrequencies(userId));
     }
 
     [Authorize]
@@ -26,7 +26,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
     {
         var userId = User.GetRequiredUserId();
 
-        return await frequencyService.GetUserFrequencies(userId);
+        return Ok(await frequencyService.GetUserFrequencies(userId));
     }
 
     [Authorize]
@@ -37,7 +37,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
         var frequency = await frequencyService.GetFrequency(id, userId);
 
-        return frequency!;
+        return Ok(frequency);
     }
 
     [Authorize]
@@ -48,7 +48,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
         var createdFrequency = await frequencyService.CreateFrequency(frequency, userId);
 
-        return createdFrequency!;
+        return Ok(createdFrequency);
     }
 
     [Authorize]
@@ -59,7 +59,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
         var updatedFrequency = await frequencyService.UpdateFrequency(frequency, id, userId);
 
-        return updatedFrequency!;
+        return Ok(updatedFrequency);
     }
 
     [Authorize]
@@ -70,6 +70,6 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
         var deleted = await frequencyService.DeleteFrequency(id, userId);
 
-        return deleted;
+        return Ok(deleted);
     }
 }

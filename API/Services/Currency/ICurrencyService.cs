@@ -4,6 +4,6 @@ namespace API.Services.Currency;
 
 public interface ICurrencyService
 {
-    public Task<List<CurrencyDto>> GetAllCurrencies();
-    public Task<CurrencyDto?> GetCurrencyById(int id);
+    Task<IReadOnlyCollection<CurrencyDto>> GetAllCurrencies();
+    Task<CurrencyDto?> GetCurrencyById(int id);
 }
