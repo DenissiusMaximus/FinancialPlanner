@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-
 namespace API.Models;
 
-public partial class Transaction
+public class TransactionDto
 {
     public int Id { get; set; }
 
@@ -24,7 +21,7 @@ public partial class Transaction
     public int CurrencyId { get; set; }
 
     public int TransactionTypeId { get; set; }
-
+    
     public virtual Category? Category { get; set; }
 
     public virtual Currency Currency { get; set; } = null!;
@@ -34,6 +31,4 @@ public partial class Transaction
     public virtual Source Source { get; set; } = null!;
 
     public virtual TransactionType TransactionType { get; set; } = null!;
-
-    public virtual User User { get; set; } = null!;
 }

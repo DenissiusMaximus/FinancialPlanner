@@ -5,10 +5,10 @@ namespace API.Services.Frequency;
 
 public interface IFrequencyService
 {
-    Task<IReadOnlyCollection<FrequencyDto>> GetFrequencies(int userId);
-    Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies(int userId);
-    Task<FrequencyDto?> GetFrequency(int id, int userId);
-    Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency, int userId);
-    Task<FrequencyDto?> UpdateFrequency(FrequencyInput frequency, int id, int userId);
-    Task<bool> DeleteFrequency(int id, int userId);
+    Task<IReadOnlyCollection<FrequencyDto>> GetFrequencies();
+    Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies();
+    Task<FrequencyDto?> GetFrequency(int id);
+    Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency);
+    Task<FrequencyDto?> UpdateFrequency(FrequencyInput frequency, int id);
+    Task<bool> DeleteFrequency(int id);
 }

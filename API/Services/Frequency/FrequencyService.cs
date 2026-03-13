@@ -1,13 +1,15 @@
 using API.Models;
 using API.Utils.Notification;
+using API.Utils.UserContext;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Frequency;
 
-public class FrequencyService(AppDbContext context, NotificationContext notificationContext) : IFrequencyService
+public class FrequencyService(AppDbContext context, NotificationContext notificationContext, ICurrentUserProvider currentUserProvider) : IFrequencyService
 {
-   public async Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency, int userId)
+   public async Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency)
    {
+       var userId = currentUserProvider.RequiredUserId;
        var intervalUnit = await context.IntervalUnits.FindAsync(frequency.IntervalUnitId);
 
        if (intervalUnit == null)
@@ -31,9 +33,10 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
        return CreateFrequencyDto(result.Entity);
    }
 
-    public async Task<bool> DeleteFrequency(int id, int userId)
+    public async Task<bool> DeleteFrequency(int id)
     {
-        var frequency = context.Frequencies.FirstOrDefault(f => f.Id == id && f.UserId == userId);
+        var userId = currentUserProvider.RequiredUserId;
+        var frequency = await context.Frequencies.FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
         if (frequency == null)
         {
@@ -45,8 +48,9 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         return await context.SaveChangesAsync() > 0;
     }
 
-    public async Task<IReadOnlyCollection<FrequencyDto>> GetFrequencies(int userId)
+    public async Task<IReadOnlyCollection<FrequencyDto>> GetFrequencies()
     {
+        var userId = currentUserProvider.RequiredUserId;
         var frequencies = await context.Frequencies
             .AsNoTracking()
             .Include(f => f.IntervalUnitNavigation)
@@ -57,12 +61,13 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         return frequencies;
     }
 
-    public async Task<FrequencyDto?> GetFrequency(int id, int userId)
+    public async Task<FrequencyDto?> GetFrequency(int id)
     {
-        var frequency = context.Frequencies
+        var userId = currentUserProvider.RequiredUserId;
+        var frequency = await context.Frequencies
             .AsNoTracking()
             .Include(f => f.IntervalUnitNavigation)
-            .FirstOrDefault(f => f.Id == id && f.UserId == userId);
+            .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
         if (frequency == null)
         {
@@ -73,13 +78,14 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         return CreateFrequencyDto(frequency);
     }
 
-    public async Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies(int userId)
+    public async Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies()
     {
-        var frequencies = context.Frequencies
+        var userId = currentUserProvider.RequiredUserId;
+        var frequencies = await context.Frequencies
             .AsNoTracking()
             .Include(f => f.IntervalUnitNavigation)
             .Where(f => f.UserId == userId)
-            .ToList();
+            .ToListAsync();
 
         return
         [
@@ -87,11 +93,12 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         ];
     }
 
-        public async Task<FrequencyDto?> UpdateFrequency(FrequencyInput frequency, int id, int userId)
+        public async Task<FrequencyDto?> UpdateFrequency(FrequencyInput frequency, int id)
         {
-            var existingFrequency = context.Frequencies
+            var userId = currentUserProvider.RequiredUserId;
+            var existingFrequency = await context.Frequencies
                 .Include(f => f.IntervalUnitNavigation)
-                .FirstOrDefault(f => f.Id == id && f.UserId == userId);
+                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
             if (existingFrequency == null)
             {

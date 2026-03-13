@@ -14,65 +14,41 @@ public class SourceController(ISourceService sourceService) : ControllerBase
     [HttpGet]
     public async Task<ActionResult<List<SourceDto>>> Get()
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.GetSources(userId);
-
-        return Ok(result);
+        return Ok((IReadOnlyCollection<SourceDto>?)await sourceService.GetSources());
     }
 
     [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<SourceDto>> GetById(int id)
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.GetSourceById(id, userId);
-
-        return Ok(result);
+        return Ok(await sourceService.GetSourceById(id));
     }
 
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<SourceDto>> Create(CreateSourceInput input)
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.CreateSource(input, userId);
-
-        return Ok(result);
+        return Ok(await sourceService.CreateSource(input));
     }
 
     [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<SourceDto>> Update(int id, UpdateSourceInput input)
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.UpdateSource(id, input, userId);
-
-        return Ok(result);
+        return Ok(await sourceService.UpdateSource(id, input));
     }
 
     [Authorize]
     [HttpPatch("archive/{id}")]
     public async Task<ActionResult<SourceDto>> Archive(int id)
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.ArchiveSource(id, userId);
-
-        return Ok(result);
+        return Ok(await sourceService.ArchiveSource(id));
     }
 
     [Authorize]
     [HttpPatch("unarchive/{id}")]
     public async Task<ActionResult<SourceDto>> UnArchive(int id)
     {
-        var userId = User.GetRequiredUserId();
-
-        var result = await sourceService.UnArchiveSource(id, userId);
-
-        return Ok(result);
+        return Ok(await sourceService.UnArchiveSource(id));
     }
 }

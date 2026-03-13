@@ -5,9 +5,9 @@ namespace API.Services.Category;
 
 public interface ICategoryService
 {
-    Task<CategoryDto?> CreateCategory(CategoryInput input, int userId);
-    Task<bool> DeleteCategory(int id, int userId);
-    Task<IReadOnlyCollection<CategoryDto>> GetCategories(int userId);
-    Task<CategoryDto?> GetCategoryById(int id, int userId);
-    Task<CategoryDto?> UpdateCategory(int id, CategoryInput input, int userId);
+    Task<CategoryDto?> CreateCategory(CategoryInput input);
+    Task<bool> DeleteCategory(int id);
+    Task<IReadOnlyCollection<CategoryDto>> GetCategories();
+    Task<CategoryDto?> GetCategoryById(int id);
+    Task<CategoryDto?> UpdateCategory(int id, CategoryInput input);
 }

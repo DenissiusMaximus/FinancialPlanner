@@ -1,14 +1,20 @@
 using System;
 using API.Dtos;
 using API.Utils.Notification;
+using API.Utils.UserContext;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Source;
 
-public class SourceService(AppDbContext context, NotificationContext notificationContext) : ISourceService
+public class SourceService(
+    AppDbContext context,
+    NotificationContext notificationContext,
+    ICurrentUserProvider currentUserProvider) : ISourceService
 {
-    public async Task<SourceDto?> GetSourceById(int sourceId, int userId)
+    public async Task<SourceDto?> GetSourceById(int sourceId)
     {
+        var userId = currentUserProvider.RequiredUserId;
+
         var source = await context.Sources
             .AsNoTracking()
             .Include(s => s.Currency)
@@ -19,19 +25,21 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         return source;
     }
 
-    public async Task<IReadOnlyCollection<SourceDto>> GetSources(int userId)
+    public async Task<IReadOnlyCollection<SourceDto>> GetSources()
     {
+        var userId = currentUserProvider.RequiredUserId;
+
         var result = await context.Sources
-                .AsNoTracking()
+            .AsNoTracking()
             .Include(s => s.Currency)
-            .Where(s => s.UserId == userId && !s.IsArchived)
+            .Where(s => s.UserId == userId)
             .Select(s => CreateSourceDto(s))
             .ToListAsync();
 
         return result;
     }
 
-    public async Task<SourceDto?> CreateSource(CreateSourceInput createSourceDto, int userId)
+    public async Task<SourceDto?> CreateSource(CreateSourceInput createSourceDto)
     {
         var currency = await context.Currencies.FirstOrDefaultAsync(c => c.Id == createSourceDto.CurrencyId);
 
@@ -40,6 +48,8 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
             notificationContext.AddNotification("Currency not found", ErrorType.NotFound);
             return null;
         }
+
+        var userId = currentUserProvider.RequiredUserId;
 
         var source = new Models.Source
         {
@@ -57,8 +67,9 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         return CreateSourceDto(result.Entity);
     }
 
-    public async Task<SourceDto?> ArchiveSource(int sourceId, int userId)
+    public async Task<SourceDto?> ArchiveSource(int sourceId)
     {
+        var userId = currentUserProvider.RequiredUserId;
         var source = await context.Sources.Include(s => s.Currency)
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
@@ -67,6 +78,7 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
             notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
         }
+        
 
         source.IsArchived = true;
         await context.SaveChangesAsync();
@@ -74,8 +86,9 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         return CreateSourceDto(source);
     }
 
-    public async Task<SourceDto?> UnArchiveSource(int sourceId, int userId)
+    public async Task<SourceDto?> UnArchiveSource(int sourceId)
     {
+        var userId = currentUserProvider.RequiredUserId;
         var source = await context.Sources.Include(s => s.Currency)
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
@@ -92,8 +105,9 @@ public class SourceService(AppDbContext context, NotificationContext notificatio
         return CreateSourceDto(source);
     }
 
-    public async Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto, int userId)
+    public async Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto)
     {
+        var userId = currentUserProvider.RequiredUserId;
         var source = await context.Sources.Include(s => s.Currency)
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 

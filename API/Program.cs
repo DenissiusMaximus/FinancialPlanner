@@ -13,6 +13,7 @@ using API.Utils;
 using API.Utils.ExceptionHandler;
 using API.Utils.JwtProvider;
 using API.Utils.Notification;
+using API.Utils.UserContext;
 using FluentValidation;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
@@ -60,6 +61,8 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddScoped<NotificationContext>();
+
+builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
 
 builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });
 

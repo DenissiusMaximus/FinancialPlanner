@@ -4,10 +4,10 @@ namespace API.Services.Source;
 
 public interface ISourceService
 {
-    Task<SourceDto?> CreateSource(CreateSourceInput createSourceDto, int userId);
-    Task<SourceDto?> ArchiveSource(int sourceId, int userId);
-    Task<SourceDto?> UnArchiveSource(int sourceId, int userId);
-    Task<SourceDto?> GetSourceById(int sourceId, int userId);
-    Task<IReadOnlyCollection<SourceDto>> GetSources(int userId);
-    Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto, int userId);
+    Task<SourceDto?> CreateSource(CreateSourceInput createSourceDto);
+    Task<SourceDto?> ArchiveSource(int sourceId);
+    Task<SourceDto?> UnArchiveSource(int sourceId);
+    Task<SourceDto?> GetSourceById(int sourceId);
+    Task<IReadOnlyCollection<SourceDto>> GetSources();
+    Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto);
 }

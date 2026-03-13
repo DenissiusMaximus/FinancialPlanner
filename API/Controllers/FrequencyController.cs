@@ -15,61 +15,41 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
     [HttpGet]
     public async Task<ActionResult<List<FrequencyDto>>> GetFrequencies()
     {
-        var userId = User.GetRequiredUserId();
-
-        return Ok(await frequencyService.GetFrequencies(userId));
+        return Ok(await frequencyService.GetFrequencies());
     }
 
     [Authorize]
     [HttpGet("user")]
     public async Task<ActionResult<List<FrequencyDto>>> GetUserFrequencies()
     {
-        var userId = User.GetRequiredUserId();
-
-        return Ok(await frequencyService.GetUserFrequencies(userId));
+        return Ok(await frequencyService.GetUserFrequencies());
     }
 
     [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<FrequencyDto>> GetFrequency(int id)
     {
-        var userId = User.GetRequiredUserId();
-
-        var frequency = await frequencyService.GetFrequency(id, userId);
-
-        return Ok(frequency);
+        return Ok(await frequencyService.GetFrequency(id));
     }
 
     [Authorize]
     [HttpPost]
     public async Task<ActionResult<FrequencyDto>> CreateFrequency(FrequencyInput frequency)
     {
-        var userId = User.GetRequiredUserId();
-
-        var createdFrequency = await frequencyService.CreateFrequency(frequency, userId);
-
-        return Ok(createdFrequency);
+        return Ok(await frequencyService.CreateFrequency(frequency));
     }
 
     [Authorize]
     [HttpPut("{id}")]
     public async Task<ActionResult<FrequencyDto>> UpdateFrequency(int id, FrequencyInput frequency)
     {
-        var userId = User.GetRequiredUserId();
-
-        var updatedFrequency = await frequencyService.UpdateFrequency(frequency, id, userId);
-
-        return Ok(updatedFrequency);
+        return Ok(await frequencyService.UpdateFrequency(frequency, id));
     }
 
     [Authorize]
     [HttpDelete("{id}")]
     public async Task<ActionResult<bool>> DeleteFrequency(int id)
     {
-        var userId = User.GetRequiredUserId();
-
-        var deleted = await frequencyService.DeleteFrequency(id, userId);
-
-        return Ok(deleted);
+        return Ok(await frequencyService.DeleteFrequency(id));
     }
 }
