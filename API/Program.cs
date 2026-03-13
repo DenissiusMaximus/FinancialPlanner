@@ -97,7 +97,7 @@ if (app.Environment.IsDevelopment())
     using var scope = app.Services.CreateScope();
     var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
 
-    var devToken = jwtService.GenerateDevAccessToken(1).GetAwaiter().GetResult();
+    var devToken = jwtService.GenerateDevAccessToken(1);
 
     app.Use(async (context, next) =>
     {

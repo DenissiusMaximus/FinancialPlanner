@@ -1,5 +1,4 @@
 using API.Inputs;
-using API.Models;
 using FluentValidation;
 
 namespace API.Validators;

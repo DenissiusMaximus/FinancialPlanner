@@ -1,3 +1,5 @@
+using API.Services.Jwt;
+
 namespace API.Services;
 
 public class JwtLoggingService(
@@ -19,9 +21,9 @@ public class JwtLoggingService(
         return result;
     }
 
-    public async Task<string> GenerateDevAccessToken(int id)
+    public string GenerateDevAccessToken(int id)
     {
-        var token = await innerService.GenerateDevAccessToken(id);
+        var token = innerService.GenerateDevAccessToken(id);
         logger.LogInformation("Generated dev access token for user ID: {UserId}", id);
         return token;
     }

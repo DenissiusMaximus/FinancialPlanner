@@ -1,10 +1,9 @@
 using API.Dtos;
-using API.Models;
 using API.Utils;
 using API.Utils.JwtProvider;
 using Microsoft.EntityFrameworkCore;
 
-namespace API.Services;
+namespace API.Services.User;
 
 public class UserService(AppDbContext context, IPasswordHasher passwordHasher, IJwtProvider jwtProvider) : IUserService
 {
