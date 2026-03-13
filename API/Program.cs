@@ -51,6 +51,8 @@ builder.Services.AddScoped<IIntervalUnitService, IntervalUnitService>();
 
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
+builder.Services.AddScoped<ITransactionTypeService, TransactionTypeService>();
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();
