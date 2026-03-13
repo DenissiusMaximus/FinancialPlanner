@@ -20,7 +20,7 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
     public string GenerateRefreshToken(int id)
         => GenerateToken(id, () => DateTime.UtcNow.Add(options.Value.RefreshTokenExpiration), options.Value.SecretRefresh);
 
-    public async Task<string?> RefreshToken(string token)
+    public async Task<string?> RefreshTokenAsync(string token)
     {
         var result = await ValidateToken(token, options.Value.SecretRefresh);
 
@@ -35,7 +35,7 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
         return GenerateToken(result.Value.userId, () => DateTime.UtcNow.Add(options.Value.AccessTokenExpiration), options.Value.SecretAccess);
     }
 
-    public async Task<bool> AddTokenToBlacklist(string token)
+    public async Task<bool> AddTokenToBlacklistAsync(string token)
     {
         var validatedToken = await ValidateToken(token, options.Value.SecretRefresh);
 

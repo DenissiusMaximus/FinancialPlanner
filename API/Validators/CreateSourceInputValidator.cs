@@ -1,5 +1,6 @@
 using System;
 using API.Dtos;
+using API.Inputs;
 using FluentValidation;
 
 namespace API.Validators;

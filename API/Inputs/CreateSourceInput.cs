@@ -1,12 +1,11 @@
-using System;
-
-namespace API.Dtos;
-
-public class CreateSourceInput
+namespace API.Inputs
 {
-    public string Name { get; set; } = null!;
+    public class CreateSourceInput
+    {
+        public string Name { get; set; } = null!;
 
-    public decimal Amount { get; set; }
+        public decimal Amount { get; set; }
 
-    public int CurrencyId { get; set; }
+        public int CurrencyId { get; set; }
+    }
 }

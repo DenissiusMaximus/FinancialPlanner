@@ -8,7 +8,7 @@ public interface IJwtProvider
     
     // DEV ONLY
     string GenerateDevAccessToken(int id);
-	Task<string?> RefreshToken(string token);
-	Task<bool> AddTokenToBlacklist(string token);
+	Task<string?> RefreshTokenAsync(string token);
+	Task<bool> AddTokenToBlacklistAsync(string token);
 }
 

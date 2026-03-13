@@ -1,5 +1,5 @@
 using API.Dtos;
-using API.Extensions;
+using API.Inputs;
 using API.Services.Source;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;

@@ -1,4 +1,5 @@
 using System;
+using API.Inputs;
 using API.Models;
 
 namespace API.Services.Frequency;

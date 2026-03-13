@@ -1,6 +1,6 @@
-namespace API.Models;
+namespace API.Inputs;
 
-public partial class TransactionInput
+public class TransactionInput
 {
     public decimal Amount { get; set; }
 
