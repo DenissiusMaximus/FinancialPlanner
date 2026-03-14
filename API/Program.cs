@@ -7,6 +7,7 @@ using API.Services.Currency;
 using API.Services.Frequency;
 using API.Services.InteralUnit;
 using API.Services.Jwt;
+using API.Services.Logging;
 using API.Services.Source;
 using API.Services.User;
 using API.Utils;

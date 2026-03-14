@@ -1,6 +1,6 @@
 using API.Services.Jwt;
 
-namespace API.Services;
+namespace API.Services.Logging;
 
 public class JwtLoggingService(
     IJwtService innerService,
