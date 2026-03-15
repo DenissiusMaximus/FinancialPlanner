@@ -2,7 +2,7 @@ using API.Extensions;
 
 namespace API.Utils.UserContext;
 
-public class CurrentUserProvider(IHttpContextAccessor accessor) : ICurrentUserProvider
+public class CurrentUserContext(IHttpContextAccessor accessor) : ICurrentUserContext
 {
     public int RequiredUserId => accessor.HttpContext?.User.GetRequiredUserId() ?? throw new UnauthorizedAccessException("User ID not found in context");
 

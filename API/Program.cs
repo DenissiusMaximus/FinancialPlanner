@@ -63,7 +63,7 @@ builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddScoped<NotificationContext>();
 
-builder.Services.AddScoped<ICurrentUserProvider, CurrentUserProvider>();
+builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
 builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });
 

@@ -32,7 +32,7 @@ public class SourceController(ISourceService sourceService) : ControllerBase
     }
 
     [Authorize]
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     public async Task<ActionResult<SourceDto>> Update(int id, UpdateSourceInput input)
     {
         return Ok(await sourceService.UpdateSource(id, input));

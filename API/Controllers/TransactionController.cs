@@ -38,7 +38,7 @@ public class TransactionController(ITransactionService transactionService) : Con
         return Ok(await transactionService.DeleteTransaction(id));
     }
 
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     [Authorize]
     public async Task<ActionResult<TransactionDto>> UpdateTransaction(int id, TransactionInput transactionInput)
     {

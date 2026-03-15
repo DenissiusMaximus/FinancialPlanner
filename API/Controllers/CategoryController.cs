@@ -32,7 +32,7 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
     }
 
     [Authorize]
-    [HttpPut("{id}")]
+    [HttpPatch("{id}")]
     public async Task<ActionResult<CategoryDto>> Update(int id, CategoryInput input)
     {
         return Ok(await categoryService.UpdateCategory(id, input));

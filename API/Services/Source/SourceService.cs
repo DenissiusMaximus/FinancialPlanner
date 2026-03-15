@@ -9,7 +9,7 @@ namespace API.Services.Source;
 public class SourceService(
     AppDbContext context,
     NotificationContext notificationContext,
-    ICurrentUserProvider currentUserProvider) : ISourceService
+    ICurrentUserContext currentUserProvider) : ISourceService
 {
     public async Task<SourceDto?> GetSourceById(int sourceId)
     {

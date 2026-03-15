@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Frequency;
 
-public class FrequencyService(AppDbContext context, NotificationContext notificationContext, ICurrentUserProvider currentUserProvider) : IFrequencyService
+public class FrequencyService(AppDbContext context, NotificationContext notificationContext, ICurrentUserContext currentUserProvider) : IFrequencyService
 {
    public async Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency)
    {

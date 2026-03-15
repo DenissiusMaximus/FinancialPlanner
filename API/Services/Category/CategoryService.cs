@@ -3,11 +3,12 @@ using API.Dtos;
 using API.Inputs;
 using API.Utils.Notification;
 using API.Utils.UserContext;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Category;
 
-public class CategoryService(AppDbContext context, NotificationContext notificationContext, ICurrentUserProvider currentUserProvider) : ICategoryService
+public class CategoryService(AppDbContext context, NotificationContext notificationContext, ICurrentUserContext currentUserProvider) : ICategoryService
 {
     public async Task<IReadOnlyCollection<CategoryDto>> GetCategories()
     {
@@ -76,6 +77,8 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
         category.Name = input.Name;
 
         await context.SaveChangesAsync();
+
+        category.Adapt(input);
 
         return new CategoryDto
         {
