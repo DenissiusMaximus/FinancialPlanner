@@ -1,6 +1,7 @@
 using System;
 using API.Dtos;
 using API.Inputs;
+using API.Utils.Map;
 using API.Utils.Notification;
 using API.Utils.UserContext;
 using Mapster;
@@ -15,12 +16,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
         var userId = currentUserProvider.RequiredUserId;
         var rawCategories = context.Categories.Where(c => c.UserId == userId);
 
-        return await rawCategories.AsNoTracking().Select(c => new CategoryDto
-        {
-            Id = c.Id,
-            Name = c.Name,
-            UserId = c.UserId
-        }).ToListAsync();
+        return await rawCategories.AsNoTracking().Select(c => c.Adapt<CategoryDto>()).ToListAsync();
     }
 
     public async Task<CategoryDto?> GetCategoryById(int id)
@@ -34,12 +30,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
             return null;
         }
 
-        return new CategoryDto
-        {
-            Id = category.Id,
-            Name = category.Name,
-            UserId = category.UserId
-        };
+        return category.Adapt<CategoryDto>();
     }
 
     public async Task<CategoryDto?> CreateCategory(CategoryInput input)
@@ -55,12 +46,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
 
         await context.SaveChangesAsync();
 
-        return new CategoryDto
-        {
-            Id = result.Entity.Id,
-            Name = result.Entity.Name,
-            UserId = result.Entity.UserId
-        };
+        return result.Entity.Adapt<CategoryDto>();
     }
 
     public async Task<CategoryDto?> UpdateCategory(int id, CategoryInput input)
@@ -74,18 +60,11 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
             return null;
         }
 
-        category.Name = input.Name;
+        input.AdaptIgnoreNull(category);
 
         await context.SaveChangesAsync();
 
-        category.Adapt(input);
-
-        return new CategoryDto
-        {
-            Id = category.Id,
-            Name = category.Name,
-            UserId = category.UserId
-        };
+        return category.Adapt<CategoryDto>();
     }
 
     public async Task<bool> DeleteCategory(int id)

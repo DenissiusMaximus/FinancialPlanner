@@ -1,5 +1,6 @@
 using API.Models;
 using API.Utils.Notification;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Currency;
@@ -10,7 +11,7 @@ public class CurrencyService(AppDbContext context, NotificationContext notificat
     {
         var currencies = await context.Currencies.AsNoTracking().ToListAsync();
 
-        return [.. currencies.Select(CreateCurrencyDto)];
+        return [.. currencies.Select(c => c.Adapt<CurrencyDto>())];
     }
 
     public async Task<CurrencyDto?> GetCurrencyById(int id)
@@ -23,16 +24,6 @@ public class CurrencyService(AppDbContext context, NotificationContext notificat
             return null;
         }
 
-        return CreateCurrencyDto(currency);
-    }
-
-    private CurrencyDto CreateCurrencyDto(Models.Currency currency)
-    {
-        return new CurrencyDto
-        {
-            Id = currency.Id,
-            Name = currency.Name,
-            UsdExchangeRate = currency.UsdExchangeRate
-        };
+        return currency.Adapt<CurrencyDto>();
     }
 }

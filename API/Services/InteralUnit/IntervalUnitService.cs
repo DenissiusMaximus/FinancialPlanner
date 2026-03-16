@@ -1,5 +1,6 @@
 using API.Models;
 using API.Utils.Notification;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.InteralUnit;
@@ -10,11 +11,7 @@ public class IntervalUnitService(AppDbContext context, NotificationContext notif
     {
         var intervalUnits = await context.IntervalUnits
             .AsNoTracking()
-            .Select(iu => new IntervalUnitDto
-            {
-                Id = iu.Id,
-                Name = iu.Name
-            })
+            .Select(iu => iu.Adapt<IntervalUnitDto>())
             .ToListAsync();
 
         return intervalUnits;
@@ -25,11 +22,7 @@ public class IntervalUnitService(AppDbContext context, NotificationContext notif
         var intervalUnit = await context.IntervalUnits
             .AsNoTracking()
             .Where(iu => iu.Id == id)
-            .Select(iu => new IntervalUnitDto
-            {
-                Id = iu.Id,
-                Name = iu.Name
-            })
+            .Select(iu => iu.Adapt<IntervalUnitDto>())
             .FirstOrDefaultAsync();
 
         if (intervalUnit == null)

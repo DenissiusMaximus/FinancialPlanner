@@ -1,6 +1,6 @@
 namespace API.Inputs;
 
-public class FrequencyInput
+public class CreateFrequencyInput
 {
     public string Name { get; set; } = null!;
 

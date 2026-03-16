@@ -3,7 +3,7 @@ using FluentValidation;
 
 namespace API.Validators;
 
-public class FrequencyInputValidator : AbstractValidator<FrequencyInput>
+public class FrequencyInputValidator : AbstractValidator<CreateFrequencyInput>
 {
     public FrequencyInputValidator()
     {

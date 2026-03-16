@@ -1,14 +1,16 @@
 using API.Inputs;
 using API.Models;
+using API.Utils.Map;
 using API.Utils.Notification;
 using API.Utils.UserContext;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Frequency;
 
 public class FrequencyService(AppDbContext context, NotificationContext notificationContext, ICurrentUserContext currentUserProvider) : IFrequencyService
 {
-   public async Task<FrequencyDto?> CreateFrequency(FrequencyInput frequency)
+   public async Task<FrequencyDto?> CreateFrequency(CreateFrequencyInput frequency)
    {
        var userId = currentUserProvider.RequiredUserId;
        var intervalUnit = await context.IntervalUnits.FindAsync(frequency.IntervalUnitId);
@@ -19,19 +21,15 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
            return null;
        }
 
-       var newFrequency = new Models.Frequency
-       {
-           Name = frequency.Name,
-           UserId = userId,
-           IntervalUnitId = frequency.IntervalUnitId,
-           IntervalValue = frequency.IntervalValue
-       };
+        var newFrequency = frequency.Adapt<Models.Frequency>();
+       
+        newFrequency.UserId = userId;
 
        var result = context.Frequencies.Add(newFrequency);
 
        await context.SaveChangesAsync();
 
-       return CreateFrequencyDto(result.Entity);
+       return result.Entity.Adapt<FrequencyDto>();
    }
 
     public async Task<bool> DeleteFrequency(int id)
@@ -56,7 +54,7 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
             .AsNoTracking()
             .Include(f => f.IntervalUnitNavigation)
             .Where(f => f.UserId == userId || f.UserId == null)
-            .Select(f => CreateFrequencyDto(f))
+            .Select(f => f.Adapt<FrequencyDto>())
             .ToListAsync();
 
         return frequencies;
@@ -76,7 +74,7 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
             return null;
         }
 
-        return CreateFrequencyDto(frequency);
+        return frequency.Adapt<FrequencyDto>();
     }
 
     public async Task<IReadOnlyCollection<FrequencyDto>> GetUserFrequencies()
@@ -90,11 +88,11 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
 
         return
         [
-            .. frequencies.Select(CreateFrequencyDto)
+            .. frequencies.Select(f => f.Adapt<FrequencyDto>())
         ];
     }
 
-        public async Task<FrequencyDto?> UpdateFrequency(FrequencyInput frequency, int id)
+        public async Task<FrequencyDto?> UpdateFrequency(UpdateFrequencyInput frequency, int id)
         {
             var userId = currentUserProvider.RequiredUserId;
             var existingFrequency = await context.Frequencies
@@ -107,28 +105,10 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
                 return null;
             }
 
-            existingFrequency.Name = frequency.Name;
-            existingFrequency.IntervalValue = frequency.IntervalValue;
-            existingFrequency.IntervalUnitId = frequency.IntervalUnitId;
+            frequency.AdaptIgnoreNull(existingFrequency);
 
             await context.SaveChangesAsync();
 
-            return CreateFrequencyDto(existingFrequency);
+            return existingFrequency.Adapt<FrequencyDto>();
         }
-
-    private static FrequencyDto CreateFrequencyDto(Models.Frequency frequency)
-    {
-        return new FrequencyDto
-        {
-            Id = frequency.Id,
-            Name = frequency.Name,
-            UserId = frequency.UserId,
-            IntervalValue = frequency.IntervalValue,
-            IntervalUnit = new IntervalUnitDto
-            {
-                Id = frequency.IntervalUnitId,
-                Name = frequency.IntervalUnitNavigation.Name
-            }
-        };
-    }
 }

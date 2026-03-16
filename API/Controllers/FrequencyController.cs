@@ -33,14 +33,14 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<FrequencyDto>> CreateFrequency(FrequencyInput frequency)
+    public async Task<ActionResult<FrequencyDto>> CreateFrequency(CreateFrequencyInput frequency)
     {
         return Ok(await frequencyService.CreateFrequency(frequency));
     }
 
     [Authorize]
     [HttpPatch("{id}")]
-    public async Task<ActionResult<FrequencyDto>> UpdateFrequency(int id, FrequencyInput frequency)
+    public async Task<ActionResult<FrequencyDto>> UpdateFrequency(int id, CreateFrequencyInput frequency)
     {
         return Ok(await frequencyService.UpdateFrequency(frequency, id));
     }

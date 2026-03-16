@@ -111,6 +111,7 @@ if (app.Environment.IsDevelopment())
     });
 }
 
+
 app.UseExceptionHandler();
 
 app.UseSerilogRequestLogging();

@@ -2,6 +2,7 @@ using API.Dtos;
 using API.Inputs;
 using API.Utils.Notification;
 using API.Utils.UserContext;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Source;
@@ -19,7 +20,7 @@ public class SourceService(
             .AsNoTracking()
             .Include(s => s.Currency)
             .Where(s => s.Id == sourceId && s.UserId == userId)
-            .Select(s => CreateSourceDto(s))
+            .Select(s => s.Adapt<SourceDto>())
             .FirstOrDefaultAsync();
 
         return source;
@@ -33,7 +34,7 @@ public class SourceService(
             .AsNoTracking()
             .Include(s => s.Currency)
             .Where(s => s.UserId == userId)
-            .Select(s => CreateSourceDto(s))
+            .Select(s => s.Adapt<SourceDto>())
             .ToListAsync();
 
         return result;
@@ -64,7 +65,7 @@ public class SourceService(
         var result = context.Sources.Add(source);
 
         await context.SaveChangesAsync();
-        return CreateSourceDto(result.Entity);
+        return result.Entity.Adapt<SourceDto>();
     }
 
     public async Task<SourceDto?> ArchiveSource(int sourceId)
@@ -83,7 +84,7 @@ public class SourceService(
         source.IsArchived = true;
         await context.SaveChangesAsync();
 
-        return CreateSourceDto(source);
+        return source.Adapt<SourceDto>();
     }
 
     public async Task<SourceDto?> UnArchiveSource(int sourceId)
@@ -102,7 +103,7 @@ public class SourceService(
 
         await context.SaveChangesAsync();
 
-        return CreateSourceDto(source);
+        return source.Adapt<SourceDto>();
     }
 
     public async Task<SourceDto?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto)
@@ -117,24 +118,10 @@ public class SourceService(
             return null;
         }
 
-        if (updateSourceDto.Name != null)
-            source.Name = updateSourceDto.Name;
+        updateSourceDto.Adapt(source);
 
         await context.SaveChangesAsync();
 
-        return CreateSourceDto(source);
-    }
-
-    private static SourceDto CreateSourceDto(Models.Source source)
-    {
-        return new SourceDto
-        {
-            Id = source.Id,
-            Name = source.Name,
-            Amount = source.Amount,
-            UserId = source.UserId,
-            CurrencyId = source.CurrencyId,
-            CurrencyName = source.Currency.Name
-        };
+        return source.Adapt<SourceDto>();
     }
 }
