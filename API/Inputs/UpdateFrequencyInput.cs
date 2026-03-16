@@ -2,7 +2,7 @@ namespace API.Inputs;
 
 public class UpdateFrequencyInput
 {
-    public string? Name { get; set; } = null!;
+    public string? Name { get; set; }
 
     public int? IntervalUnitId { get; set; }
 

@@ -26,14 +26,14 @@ public class CategoryController(ICategoryService categoryService) : ControllerBa
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<CategoryDto>> Create(CategoryInput input)
+    public async Task<ActionResult<CategoryDto>> Create(CreateCategoryInput input)
     {
         return Ok(await categoryService.CreateCategory(input));
     }
 
     [Authorize]
     [HttpPatch("{id}")]
-    public async Task<ActionResult<CategoryDto>> Update(int id, CategoryInput input)
+    public async Task<ActionResult<CategoryDto>> Update(int id, UpdateCategoryInput input)
     {
         return Ok(await categoryService.UpdateCategory(id, input));
     }

@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Inputs;
 using FluentValidation;
 
@@ -13,7 +14,7 @@ public class CreateSourceInputValidator : AbstractValidator<CreateSourceInput>
 
         RuleFor(x => x.Amount)
             .GreaterThan(-1).WithMessage("Amount must be non negative number");
-        
+
         RuleFor(x => x.CurrencyId)
             .NotEmpty().WithMessage("CurrencyId is required")
             .GreaterThan(0).WithMessage("CurrencyId must be greater than 0");

@@ -1,6 +1,7 @@
 namespace API.Inputs;
 
-public class CategoryInput
+public class CreateCategoryInput
 {
-    public string? Name { get; set; }
+    public string Name { get; set; }
 }
+

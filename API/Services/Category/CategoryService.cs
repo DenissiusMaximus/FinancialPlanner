@@ -33,14 +33,11 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
         return category.Adapt<CategoryDto>();
     }
 
-    public async Task<CategoryDto?> CreateCategory(CategoryInput input)
+    public async Task<CategoryDto?> CreateCategory(CreateCategoryInput input)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var category = new Models.Category
-        {
-            Name = input.Name,
-            UserId = userId
-        };
+        var category = input.Adapt<Models.Category>();
+        category.UserId = userId;
 
         var result = context.Categories.Add(category);
 
@@ -49,7 +46,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
         return result.Entity.Adapt<CategoryDto>();
     }
 
-    public async Task<CategoryDto?> UpdateCategory(int id, CategoryInput input)
+    public async Task<CategoryDto?> UpdateCategory(int id, UpdateCategoryInput input)
     {
         var userId = currentUserProvider.RequiredUserId;
         var category = await context.Categories.FirstOrDefaultAsync(c => c.Id == id && c.UserId == userId);
