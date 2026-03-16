@@ -40,7 +40,7 @@ public class FrequencyController(IFrequencyService frequencyService) : Controlle
 
     [Authorize]
     [HttpPatch("{id}")]
-    public async Task<ActionResult<FrequencyDto>> UpdateFrequency(int id, CreateFrequencyInput frequency)
+    public async Task<ActionResult<FrequencyDto>> UpdateFrequency(int id, UpdateFrequencyInput frequency)
     {
         return Ok(await frequencyService.UpdateFrequency(frequency, id));
     }

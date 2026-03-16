@@ -10,27 +10,29 @@ namespace API.Services.Frequency;
 
 public class FrequencyService(AppDbContext context, NotificationContext notificationContext, ICurrentUserContext currentUserProvider) : IFrequencyService
 {
-   public async Task<FrequencyDto?> CreateFrequency(CreateFrequencyInput frequency)
-   {
-       var userId = currentUserProvider.RequiredUserId;
-       var intervalUnit = await context.IntervalUnits.FindAsync(frequency.IntervalUnitId);
+    public async Task<FrequencyDto?> CreateFrequency(CreateFrequencyInput frequency)
+    {
+        var userId = currentUserProvider.RequiredUserId;
+        var intervalUnit = await context.IntervalUnits.FindAsync(frequency.IntervalUnitId);
 
-       if (intervalUnit == null)
-       {
-           notificationContext.AddNotification("Interval unit not found", ErrorType.NotFound);
-           return null;
-       }
+        if (intervalUnit == null)
+        {
+            notificationContext.AddNotification("Interval unit not found", ErrorType.NotFound);
+            return null;
+        }
 
         var newFrequency = frequency.Adapt<Models.Frequency>();
-       
+
         newFrequency.UserId = userId;
 
-       var result = context.Frequencies.Add(newFrequency);
+        var result = context.Frequencies.Add(newFrequency);
 
-       await context.SaveChangesAsync();
+        await context.SaveChangesAsync();
 
-       return result.Entity.Adapt<FrequencyDto>();
-   }
+        await context.Entry(result.Entity).Reference(f => f.IntervalUnitNavigation).LoadAsync();
+
+        return result.Entity.Adapt<FrequencyDto>();
+    }
 
     public async Task<bool> DeleteFrequency(int id)
     {
@@ -92,23 +94,25 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         ];
     }
 
-        public async Task<FrequencyDto?> UpdateFrequency(UpdateFrequencyInput frequency, int id)
+    public async Task<FrequencyDto?> UpdateFrequency(UpdateFrequencyInput frequency, int id)
+    {
+        var userId = currentUserProvider.RequiredUserId;
+        var existingFrequency = await context.Frequencies
+            .Include(f => f.IntervalUnitNavigation)
+            .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
+
+        if (existingFrequency == null)
         {
-            var userId = currentUserProvider.RequiredUserId;
-            var existingFrequency = await context.Frequencies
-                .Include(f => f.IntervalUnitNavigation)
-                .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
-
-            if (existingFrequency == null)
-            {
-                notificationContext.AddNotification("Frequency not found", ErrorType.NotFound);
-                return null;
-            }
-
-            frequency.AdaptIgnoreNull(existingFrequency);
-
-            await context.SaveChangesAsync();
-
-            return existingFrequency.Adapt<FrequencyDto>();
+            notificationContext.AddNotification("Frequency not found", ErrorType.NotFound);
+            return null;
         }
+
+        frequency.AdaptIgnoreNull(existingFrequency);
+
+        await context.SaveChangesAsync();
+
+        await context.Entry(existingFrequency).Reference(f => f.IntervalUnitNavigation).LoadAsync();
+
+        return existingFrequency.Adapt<FrequencyDto>();
+    }
 }

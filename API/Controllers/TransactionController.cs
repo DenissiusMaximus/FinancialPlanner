@@ -26,7 +26,7 @@ public class TransactionController(ITransactionService transactionService) : Con
 
     [HttpPost]
     [Authorize]
-    public async Task<ActionResult<TransactionDto>> CreateTransaction(TransactionInput transactionInput)
+    public async Task<ActionResult<TransactionDto>> CreateTransaction(CreateTransactionInput transactionInput)
     {
         return Ok(await transactionService.CreateTransaction(transactionInput));
     }
@@ -40,7 +40,7 @@ public class TransactionController(ITransactionService transactionService) : Con
 
     [HttpPatch("{id}")]
     [Authorize]
-    public async Task<ActionResult<TransactionDto>> UpdateTransaction(int id, TransactionInput transactionInput)
+    public async Task<ActionResult<TransactionDto>> UpdateTransaction(int id, UpdateTransactionInput transactionInput)
     {
         return Ok(await transactionService.UpdateTransaction(id, transactionInput));
     }

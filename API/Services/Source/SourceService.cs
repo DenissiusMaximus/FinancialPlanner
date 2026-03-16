@@ -1,5 +1,6 @@
 using API.Dtos;
 using API.Inputs;
+using API.Utils.Map;
 using API.Utils.Notification;
 using API.Utils.UserContext;
 using Mapster;
@@ -118,7 +119,7 @@ public class SourceService(
             return null;
         }
 
-        updateSourceDto.Adapt(source);
+        updateSourceDto.AdaptIgnoreNull(source);
 
         await context.SaveChangesAsync();
 

@@ -55,6 +55,8 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 
 builder.Services.AddScoped<ITransactionTypeService, TransactionTypeService>();
 
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+
 builder.Services.AddHttpContextAccessor();
 
 builder.Services.AddValidatorsFromAssemblyContaining<Program>();

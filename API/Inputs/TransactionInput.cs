@@ -1,6 +1,6 @@
 namespace API.Inputs;
 
-public class TransactionInput
+public class CreateTransactionInput
 {
     public decimal Amount { get; set; }
 
@@ -18,3 +18,4 @@ public class TransactionInput
 
     public int TransactionTypeId { get; set; }
 }
+
