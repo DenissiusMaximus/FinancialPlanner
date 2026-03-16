@@ -16,7 +16,7 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
         var userId = currentUserProvider.RequiredUserId;
         var rawCategories = context.Categories.Where(c => c.UserId == userId);
 
-        return await rawCategories.AsNoTracking().Select(c => c.Adapt<CategoryDto>()).ToListAsync();
+        return await rawCategories.AsNoTracking().ProjectToType<CategoryDto>().ToListAsync();
     }
 
     public async Task<CategoryDto?> GetCategoryById(int id)

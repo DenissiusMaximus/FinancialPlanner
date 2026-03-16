@@ -33,9 +33,8 @@ public class SourceService(
 
         var result = await context.Sources
             .AsNoTracking()
-            .Include(s => s.Currency)
             .Where(s => s.UserId == userId)
-            .Select(s => s.Adapt<SourceDto>())
+            .ProjectToType<SourceDto>()
             .ToListAsync();
 
         return result;
@@ -80,7 +79,7 @@ public class SourceService(
             notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
         }
-        
+
 
         source.IsArchived = true;
         await context.SaveChangesAsync();
@@ -123,6 +122,12 @@ public class SourceService(
 
         await context.SaveChangesAsync();
 
-        return source.Adapt<SourceDto>();
+        var updatedSource = await context.Sources
+            .AsNoTracking()
+            .Where(s => s.Id == sourceId && s.UserId == userId)
+            .ProjectToType<SourceDto>()
+            .FirstOrDefaultAsync();
+
+        return updatedSource;
     }
 }

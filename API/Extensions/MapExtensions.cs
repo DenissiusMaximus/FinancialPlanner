@@ -1,4 +1,7 @@
 using System;
+using API.Dtos;
+using API.Inputs;
+using API.Models;
 using Mapster;
 
 namespace API.Utils.Map;
@@ -10,6 +13,16 @@ public static class MapConfig
     static MapConfig()
     {
         PatchConfig.Default.IgnoreNullValues(true);
+
+        PatchConfig.NewConfig<UpdateTransactionInput, Transaction>()
+            .AfterMapping((src, dest) =>
+            {
+                if (src.CategoryId == 0 || src.CategoryId == -1)
+                    dest.CategoryId = null;
+
+                if (src.DestinationSourceId == 0 || src.DestinationSourceId == -1)
+                    dest.DestinationSourceId = null;
+            });
     }
 }
 

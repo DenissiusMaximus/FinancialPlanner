@@ -8,7 +8,7 @@ public class CreateTransactionInputValidator : AbstractValidator<CreateTransacti
     public CreateTransactionInputValidator()
     {
         RuleFor(x => x.Amount)
-            .GreaterThan(-1).WithMessage("Amount must be non negative number");
+            .GreaterThan(0).WithMessage("Amount must be non negative number");
 
         RuleFor(x => x.Comment)
             .MaximumLength(1000).WithMessage("Comment must be at most 1000 characters long");

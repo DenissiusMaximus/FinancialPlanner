@@ -23,14 +23,10 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
 
         var createdTransaction = await context.Transactions
         .AsNoTracking()
-        .Include(t => t.Source)
-        .Include(t => t.DestinationSource)
-        .Include(t => t.Category)
-        .Include(t => t.Currency)
-        .Include(t => t.TransactionType)
+        .ProjectToType<TransactionDto>()
         .FirstOrDefaultAsync(t => t.Id == addedTransaction.Entity.Id && t.UserId == userId);
 
-        return createdTransaction.Adapt<TransactionDto>();
+        return createdTransaction;
     }
 
     public async Task<bool> DeleteTransaction(int id)
@@ -52,7 +48,10 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var transaction = await context.Transactions.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+        var transaction = await context.Transactions
+        .AsNoTracking()
+        .ProjectToType<TransactionDto>()
+        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
         if (transaction == null)
         {
@@ -60,14 +59,20 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
             return null;
         }
 
-        return transaction.Adapt<TransactionDto>();
+        return transaction;
     }
 
-    public async Task<IReadOnlyCollection<TransactionDto>> GetUsersTransactions()
+    public async Task<IReadOnlyCollection<TransactionDto>> GetUsersTransactions(int limit = 100, int offset = 0)
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var transactions = await context.Transactions.AsNoTracking().Where(t => t.UserId == userId).Select(t => t.Adapt<TransactionDto>()).ToListAsync();
+        var transactions = await context.Transactions
+        .AsNoTracking()
+        .ProjectToType<TransactionDto>()
+        .Where(t => t.UserId == userId)
+        .Skip(offset)
+        .Take(limit)
+        .ToListAsync();
 
         return transactions;
     }
@@ -90,13 +95,9 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
 
         var updatedTransaction = await context.Transactions
         .AsNoTracking()
-        .Include(t => t.Source)
-        .Include(t => t.DestinationSource)
-        .Include(t => t.Category)
-        .Include(t => t.Currency)
-        .Include(t => t.TransactionType)
+        .ProjectToType<TransactionDto>()
         .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
-        return updatedTransaction.Adapt<TransactionDto>();
+        return updatedTransaction;
     }
 }

@@ -12,9 +12,9 @@ public class TransactionController(ITransactionService transactionService) : Con
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyCollection<TransactionDto>>> GetUsersTransactions()
+    public async Task<ActionResult<IReadOnlyCollection<TransactionDto>>> GetUsersTransactions([FromQuery] int limit = 100, [FromQuery] int offset = 0)
     {
-        return Ok(await transactionService.GetUsersTransactions());
+        return Ok(await transactionService.GetUsersTransactions(limit, offset));
     }
 
     [HttpGet("{id}")]
