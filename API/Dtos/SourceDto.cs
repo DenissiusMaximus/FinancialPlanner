@@ -1,4 +1,5 @@
 using System;
+using API.Models;
 
 namespace API.Dtos;
 
@@ -12,7 +13,7 @@ public class SourceDto
 
     public int UserId { get; set; }
 
-    public int CurrencyId { get; set; }
+    public CurrencyDto Currency { get; set; }
 
     public string CurrencyName { get; set; }
 

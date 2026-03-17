@@ -8,6 +8,7 @@ using API.Services.Frequency;
 using API.Services.InteralUnit;
 using API.Services.Jwt;
 using API.Services.Logging;
+using API.Services.PlannedTransaction;
 using API.Services.Source;
 using API.Services.User;
 using API.Utils;
@@ -56,6 +57,7 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ITransactionTypeService, TransactionTypeService>();
 
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IPlannedTransactionService, PlannedTransactionService>();
 
 builder.Services.AddHttpContextAccessor();
 

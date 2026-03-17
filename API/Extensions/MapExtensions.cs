@@ -4,7 +4,7 @@ using API.Inputs;
 using API.Models;
 using Mapster;
 
-namespace API.Utils.Map;
+namespace API.Extensions;
 
 public static class MapConfig
 {
