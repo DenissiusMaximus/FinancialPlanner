@@ -23,6 +23,9 @@ public static class MapConfig
                 if (src.DestinationSourceId == 0 || src.DestinationSourceId == -1)
                     dest.DestinationSourceId = null;
             });
+        
+        TypeAdapterConfig<Frequency, FrequencyDto>.NewConfig()
+            .Map(dest => dest.IntervalUnit, src => src.IntervalUnitNavigation.Name);
     }
 }
 

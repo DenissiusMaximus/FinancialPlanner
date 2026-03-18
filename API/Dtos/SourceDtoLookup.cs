@@ -3,7 +3,7 @@ using API.Models;
 
 namespace API.Dtos;
 
-public class SourceDto
+public class SourceDtoLookup
 {
     public int Id { get; set; }
 
@@ -13,9 +13,7 @@ public class SourceDto
 
     public int UserId { get; set; }
 
-    public CurrencyDto Currency { get; set; }
-
-    public string CurrencyName { get; set; }
+    public CurrencyDto Currency { get; set; } = null!;
 
     public bool IsArchived { get; set; }
 }

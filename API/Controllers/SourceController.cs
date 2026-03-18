@@ -12,42 +12,42 @@ public class SourceController(ISourceService sourceService) : ControllerBase
 {
     [Authorize]
     [HttpGet]
-    public async Task<ActionResult<List<SourceDto>>> Get()
+    public async Task<ActionResult<List<SourceDtoLookup>>> Get()
     {
-        return Ok((IReadOnlyCollection<SourceDto>?)await sourceService.GetSources());
+        return Ok((IReadOnlyCollection<SourceDtoLookup>?)await sourceService.GetSources());
     }
 
     [Authorize]
     [HttpGet("{id}")]
-    public async Task<ActionResult<SourceDto>> GetById(int id)
+    public async Task<ActionResult<SourceDtoDetailed>> GetById(int id)
     {
         return Ok(await sourceService.GetSourceById(id));
     }
 
     [Authorize]
     [HttpPost]
-    public async Task<ActionResult<SourceDto>> Create(CreateSourceInput input)
+    public async Task<ActionResult<SourceDtoLookup>> Create(CreateSourceInput input)
     {
         return Ok(await sourceService.CreateSource(input));
     }
 
     [Authorize]
     [HttpPatch("{id}")]
-    public async Task<ActionResult<SourceDto>> Update(int id, UpdateSourceInput input)
+    public async Task<ActionResult<SourceDtoLookup>> Update(int id, UpdateSourceInput input)
     {
         return Ok(await sourceService.UpdateSource(id, input));
     }
 
     [Authorize]
     [HttpPatch("archive/{id}")]
-    public async Task<ActionResult<SourceDto>> Archive(int id)
+    public async Task<ActionResult<SourceDtoLookup>> Archive(int id)
     {
         return Ok(await sourceService.ArchiveSource(id));
     }
 
     [Authorize]
     [HttpPatch("unarchive/{id}")]
-    public async Task<ActionResult<SourceDto>> UnArchive(int id)
+    public async Task<ActionResult<SourceDtoLookup>> UnArchive(int id)
     {
         return Ok(await sourceService.UnArchiveSource(id));
     }

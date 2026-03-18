@@ -54,11 +54,11 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         var userId = currentUserProvider.RequiredUserId;
         var frequencies = await context.Frequencies
             .AsNoTracking()
+            .Include(f => f.IntervalUnitNavigation)
             .Where(f => f.UserId == userId || f.UserId == null)
-            .ProjectToType<FrequencyDto>()
             .ToListAsync();
 
-        return frequencies;
+        return frequencies.Adapt<IReadOnlyCollection<FrequencyDto>>();
     }
 
     public async Task<FrequencyDto?> GetFrequency(int id)
