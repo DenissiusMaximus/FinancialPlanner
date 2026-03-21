@@ -39,8 +39,11 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
     {
         var validatedToken = await ValidateToken(token, options.Value.SecretRefresh);
 
-        if (validatedToken == null || await context.BlacklistedTokens.AnyAsync(t => t.Jti == validatedToken.Value.jti))
+        if (validatedToken == null)
             return false;
+
+        if (await context.BlacklistedTokens.AnyAsync(t => t.Jti == validatedToken.Value.jti))
+            return true;
 
         await context.BlacklistedTokens.AddAsync(new BlacklistedToken
         {
