@@ -20,4 +20,7 @@ public class AimDto
     public virtual CurrencyDto? Currency { get; set; }
 
     public virtual ICollection<SourceDtoLookup>? Sources { get; set; }
+
+    public virtual AimProgressDto? Progress { get; set; }
+
 }

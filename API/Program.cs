@@ -1,7 +1,10 @@
 using System.Text;
 using API;
+using API.Domain.Calculator;
+using API.Extensions;
 using API.Filters;
 using API.Services;
+using API.Services.Aim;
 using API.Services.Category;
 using API.Services.Currency;
 using API.Services.Frequency;
@@ -24,6 +27,8 @@ using Serilog;
 using SharpGrip.FluentValidation.AutoValidation.Mvc.Extensions;
 
 var builder = WebApplication.CreateBuilder(args);
+
+MapConfig.Configure();
 
 builder.Host.UseSerilog(((context, configuration) => configuration
         .WriteTo.Console()
@@ -57,7 +62,12 @@ builder.Services.AddScoped<ICurrencyService, CurrencyService>();
 builder.Services.AddScoped<ITransactionTypeService, TransactionTypeService>();
 
 builder.Services.AddScoped<ITransactionService, TransactionService>();
+
 builder.Services.AddScoped<IPlannedTransactionService, PlannedTransactionService>();
+
+builder.Services.AddScoped<IAimService, AimService>();
+
+builder.Services.AddScoped<IAimProgressCalculator, AimProgressCalculator>();
 
 builder.Services.AddHttpContextAccessor();
 

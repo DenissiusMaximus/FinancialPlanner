@@ -19,9 +19,8 @@ public class SourceService(
 
         var source = await context.Sources
             .AsNoTracking()
-            .Include(s => s.Currency)
+            .ProjectToType<SourceDtoDetailed>()
             .Where(s => s.Id == sourceId && s.UserId == userId)
-            .Select(s => s.Adapt<SourceDtoDetailed>())
             .FirstOrDefaultAsync();
 
         return source;
@@ -71,7 +70,7 @@ public class SourceService(
     public async Task<SourceDtoLookup?> ArchiveSource(int sourceId)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.Include(s => s.Currency)
+        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
@@ -84,13 +83,13 @@ public class SourceService(
         source.IsArchived = true;
         await context.SaveChangesAsync();
 
-        return source.Adapt<SourceDtoLookup>();
+        return source;
     }
 
     public async Task<SourceDtoLookup?> UnArchiveSource(int sourceId)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.Include(s => s.Currency)
+        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
@@ -103,13 +102,13 @@ public class SourceService(
 
         await context.SaveChangesAsync();
 
-        return source.Adapt<SourceDtoLookup>();
+        return source;
     }
 
     public async Task<SourceDtoLookup?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.Include(s => s.Currency)
+        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
             .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)

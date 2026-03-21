@@ -10,7 +10,7 @@ public static class MapConfig
 {
     public static readonly TypeAdapterConfig PatchConfig = new TypeAdapterConfig();
 
-    static MapConfig()
+    public static void Configure()
     {
         PatchConfig.Default.IgnoreNullValues(true);
 
@@ -23,9 +23,12 @@ public static class MapConfig
                 if (src.DestinationSourceId == 0 || src.DestinationSourceId == -1)
                     dest.DestinationSourceId = null;
             });
-        
+
         TypeAdapterConfig<Frequency, FrequencyDto>.NewConfig()
-            .Map(dest => dest.IntervalUnit, src => src.IntervalUnitNavigation.Name);
+            .Map(dest => dest.IntervalUnit, src => src.IntervalUnitNavigation);
+            
+        TypeAdapterConfig<Aim, AimDto>.NewConfig()
+            .Map(dest => dest.Sources, src => src.SourceAims.Select(sa => sa.Source));
     }
 }
 

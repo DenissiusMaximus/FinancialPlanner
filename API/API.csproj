@@ -28,6 +28,8 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Folder Include="Domain\" />
+    <Folder Include="Domain\Calculator\" />
     <Folder Include="Filters\" />
     <Folder Include="logs\" />
     <Folder Include="Services\Aim\" />

@@ -54,11 +54,11 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         var userId = currentUserProvider.RequiredUserId;
         var frequencies = await context.Frequencies
             .AsNoTracking()
-            .Include(f => f.IntervalUnitNavigation)
+            .ProjectToType<FrequencyDto>()
             .Where(f => f.UserId == userId || f.UserId == null)
             .ToListAsync();
 
-        return frequencies.Adapt<IReadOnlyCollection<FrequencyDto>>();
+        return frequencies;
     }
 
     public async Task<FrequencyDto?> GetFrequency(int id)
@@ -94,7 +94,7 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
     {
         var userId = currentUserProvider.RequiredUserId;
         var existingFrequency = await context.Frequencies
-            .Include(f => f.IntervalUnitNavigation)
+            .ProjectToType<FrequencyDto>()
             .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
         if (existingFrequency == null)
@@ -107,8 +107,11 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
 
         await context.SaveChangesAsync();
 
-        await context.Entry(existingFrequency).Reference(f => f.IntervalUnitNavigation).LoadAsync();
+        var updatedFrequency = await context.Frequencies
+            .AsNoTracking()
+            .ProjectToType<FrequencyDto>()
+            .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
-        return existingFrequency.Adapt<FrequencyDto>();
+        return updatedFrequency;
     }
 }
