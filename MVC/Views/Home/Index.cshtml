@@ -1,0 +1,13 @@
+﻿@model IEnumerable<API.Inputs.AimDto>
+
+<h2>Мої фінансові цілі</h2>
+
+@foreach (var aim in Model ?? Enumerable.Empty<API.Inputs.AimDto>())
+{
+    <div style="border: 1px solid #ccc; padding: 10px; margin-bottom: 10px;">
+        <h3>@aim.Name</h3>
+        <p>Необхідна сума: @aim.Amount</p>
+        <p>Пріоритет: @aim.Priority</p>
+        <p>Статус: @(aim.IsClosed ? "Закрита" : "Відкрита")</p>
+    </div>
+}

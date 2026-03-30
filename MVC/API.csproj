@@ -36,6 +36,8 @@
     <Folder Include="Services\Category\" />
     <Folder Include="Services\Source\" />
     <Folder Include="Utils\ExceptionHandler\" />
+    <Folder Include="Views\Home\" />
+    <Folder Include="wwwroot\" />
   </ItemGroup>
 
 </Project>

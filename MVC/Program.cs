@@ -79,7 +79,7 @@ builder.Services.AddScoped<NotificationContext>();
 
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
-builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });
+builder.Services.AddControllersWithViews(options => { options.Filters.Add<NotificationFilter>(); });
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -139,7 +139,11 @@ if (app.Environment.IsDevelopment())
     app.UseSwaggerUI();
 }
 
-app.MapControllers();
+app.UseStaticFiles(); 
+
+app.MapControllerRoute(
+    name: "default",
+    pattern: "{controller=Home}/{action=Index}/{id?}");
 
 app.Map("/ui", () => Results.Redirect("/swagger/index.html"));
 
