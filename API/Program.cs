@@ -41,32 +41,20 @@ builder.Services.AddDbContext<AppDbContext>(options =>
 
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
-
 builder.Services.Configure<JwtOptions>(builder.Configuration.GetSection("Jwt"));
 builder.Services.AddScoped<IJwtService, JwtService>();
 builder.Services.Decorate<IJwtService, JwtLoggingService>();
-
 builder.Services.AddScoped<IUserService, UserService>();
 builder.Services.Decorate<IUserService, UserLoggingService>();
-
 builder.Services.AddScoped<ICategoryService, CategoryService>();
-
 builder.Services.AddScoped<ISourceService, SourceService>();
-
 builder.Services.AddScoped<IFrequencyService, FrequencyService>();
-
 builder.Services.AddScoped<IIntervalUnitService, IntervalUnitService>();
-
 builder.Services.AddScoped<ICurrencyService, CurrencyService>();
-
 builder.Services.AddScoped<ITransactionTypeService, TransactionTypeService>();
-
 builder.Services.AddScoped<ITransactionService, TransactionService>();
-
 builder.Services.AddScoped<IPlannedTransactionService, PlannedTransactionService>();
-
 builder.Services.AddScoped<IAimService, AimService>();
-
 builder.Services.AddScoped<IAimProgressCalculator, AimProgressCalculator>();
 
 builder.Services.AddHttpContextAccessor();
@@ -76,7 +64,6 @@ builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 builder.Services.AddFluentValidationAutoValidation();
 
 builder.Services.AddScoped<NotificationContext>();
-
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
 builder.Services.AddControllers(options => { options.Filters.Add<NotificationFilter>(); });

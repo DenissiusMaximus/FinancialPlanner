@@ -54,4 +54,22 @@ public class AimController(IAimService aimService) : ControllerBase
 
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpPost("{aimId}/sources/{sourceId}")]
+    public async Task<IActionResult> AddSourceToAim(int aimId, int sourceId)
+    {
+        var source = await aimService.AddSourceToAim(aimId, sourceId);
+
+        return Ok(source);
+    }
+
+    [Authorize]
+    [HttpDelete("{aimId}/sources/{sourceId}")]
+    public async Task<IActionResult> RemoveSourceFromAim(int aimId, int sourceId)
+    {
+        var result = await aimService.RemoveSourceFromAim(aimId, sourceId);
+
+        return Ok(result);
+    }
 }

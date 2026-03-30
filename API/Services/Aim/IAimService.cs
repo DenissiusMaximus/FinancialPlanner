@@ -1,4 +1,5 @@
 using System;
+using API.Dtos;
 using API.Inputs;
 using API.Models;
 
@@ -11,4 +12,6 @@ public interface IAimService
     Task<AimDto?> CreateAim(CreateAimInput input);
     Task<AimDto?> UpdateAim(int id, UpdateAimInput input);
     Task<bool> DeleteAim(int id);
+    Task<SourceDtoLookup?> AddSourceToAim(int aimId, int sourceId);
+    Task<bool> RemoveSourceFromAim(int aimId, int sourceId);
 }

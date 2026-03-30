@@ -1,4 +1,5 @@
 using API.Domain.Calculator;
+using API.Dtos;
 using API.Extensions;
 using API.Inputs;
 using API.Utils.Notification;
@@ -10,6 +11,53 @@ namespace API.Services.Aim;
 
 public class AimService(NotificationContext notificationContext, AppDbContext context, ICurrentUserContext currentUserContext, IAimProgressCalculator aimProgressCalculator) : IAimService
 {
+    public async Task<SourceDtoLookup?> AddSourceToAim(int aimId, int sourceId)
+    {
+        var userId = currentUserContext.RequiredUserId;
+        var aim = context.Aims.FirstOrDefault(a => a.Id == aimId && a.UserId == userId);
+
+        if (aim == null)
+        {
+            notificationContext.AddNotification("Aim not found", ErrorType.NotFound);
+            return null;
+        }
+
+        var source = context.Sources.FirstOrDefault(s => s.Id == sourceId && s.UserId == userId);
+        if (source == null)
+        {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
+            return null;
+        }
+
+        var sourceAimExists = context.SourceAims.Any(sa => sa.AimId == aimId && sa.SourceId == sourceId && sa.Aim.UserId == userId && sa.Source.UserId == userId);
+        if (sourceAimExists)
+        {
+            notificationContext.AddNotification("Source already associated with aim", ErrorType.BadRequest);
+            return null;
+        }
+
+        aim.SourceAims.Add(new Models.SourceAim { AimId = aimId, SourceId = sourceId });
+        await context.SaveChangesAsync();
+
+        return source.Adapt<SourceDtoLookup>();
+    }
+
+
+    public async Task<bool> RemoveSourceFromAim(int aimId, int sourceId)
+    {
+        var userId = currentUserContext.RequiredUserId;
+
+        var sourceAim = context.SourceAims.FirstOrDefault(sa => sa.AimId == aimId && sa.SourceId == sourceId && sa.Aim.UserId == userId && sa.Source.UserId == userId);
+        if (sourceAim == null)
+        {
+            notificationContext.AddNotification("Source not associated with aim", ErrorType.NotFound);
+            return false;
+        }
+
+        context.SourceAims.Remove(sourceAim);
+        return await context.SaveChangesAsync() > 0;
+    }
+
     public async Task<AimDto?> CreateAim(CreateAimInput input)
     {
         var userId = currentUserContext.RequiredUserId;
