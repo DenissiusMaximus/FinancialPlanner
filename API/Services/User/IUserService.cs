@@ -8,4 +8,5 @@ public interface IUserService
     Task<AuthUserDto?> LoginUser(string email, string password);
     Task<bool> LogoutUser(string refreshToken);
     Task<bool> IsEmailAvailable(string email);
+    Task<UserDto?> GetCurrentUser();
 }

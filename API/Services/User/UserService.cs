@@ -1,11 +1,14 @@
 using API.Dtos;
+using API.Models;
 using API.Utils;
 using API.Utils.JwtProvider;
+using API.Utils.UserContext;
+using Mapster;
 using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.User;
 
-public class UserService(AppDbContext context, IPasswordHasher passwordHasher, IJwtProvider jwtProvider) : IUserService
+public class UserService(AppDbContext context, IPasswordHasher passwordHasher, IJwtProvider jwtProvider, ICurrentUserContext userContext) : IUserService
 {
     public async Task<AuthUserDto?> CreateUser(string name, string email, string password)
     {
@@ -64,5 +67,17 @@ public class UserService(AppDbContext context, IPasswordHasher passwordHasher, I
     public async Task<bool> LogoutUser(string refreshToken)
     {
         return await jwtProvider.AddTokenToBlacklistAsync(refreshToken);
+    }
+
+    public async Task<UserDto?> GetCurrentUser()
+    {
+        var userId = userContext.RequiredUserId;
+
+        var user = await context.Users
+        .AsNoTracking()
+        .ProjectToType<UserDto>()
+        .FirstOrDefaultAsync(u => u.Id == userId);
+
+        return user;
     }
 }

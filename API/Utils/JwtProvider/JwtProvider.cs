@@ -20,7 +20,7 @@ public class JwtProvider(IOptions<JwtOptions> options, AppDbContext context) : I
     public string GenerateRefreshToken(int id)
         => GenerateToken(id, () => DateTime.UtcNow.Add(options.Value.RefreshTokenExpiration), options.Value.SecretRefresh);
 
-    public async Task<string?> RefreshTokenAsync(string token)
+    public async Task<string?> RefreshAccessTokenAsync(string token)
     {
         var result = await ValidateToken(token, options.Value.SecretRefresh);
 

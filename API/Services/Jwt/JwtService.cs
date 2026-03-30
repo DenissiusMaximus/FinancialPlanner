@@ -12,6 +12,6 @@ public class JwtService(IJwtProvider jwtProvider, AppDbContext context) : IJwtSe
 
     public async Task<string?> RefreshToken(string refreshToken)
     {
-        return await jwtProvider.RefreshTokenAsync(refreshToken);
+        return await jwtProvider.RefreshAccessTokenAsync(refreshToken);
     }
 }

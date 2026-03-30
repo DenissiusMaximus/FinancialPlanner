@@ -14,6 +14,11 @@ public class UserLoggingService(IUserService innerService, ILogger<UserLoggingSe
         return result;
     }
 
+    public Task<UserDto?> GetCurrentUser()
+    {
+        return innerService.GetCurrentUser();
+    }
+
     public Task<bool> IsEmailAvailable(string email)
     {
         return innerService.IsEmailAvailable(email);

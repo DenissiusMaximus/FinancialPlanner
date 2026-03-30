@@ -51,4 +51,11 @@ public class UserController(IUserService userService) : ControllerBase
 
         return Ok(result);
     }
+
+    [Authorize]
+    [HttpGet("me")]
+    public async Task<ActionResult<AuthUserDto>> GetCurrentUser()
+    {
+        return Ok(await userService.GetCurrentUser());
+    }
 }   
