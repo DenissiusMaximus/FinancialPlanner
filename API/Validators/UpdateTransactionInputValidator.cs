@@ -1,4 +1,5 @@
 using API.Inputs;
+using API.Services.Transaction;
 using FluentValidation;
 
 namespace API.Validators;
@@ -12,5 +13,8 @@ public class UpdateTransactionInputValidator : AbstractValidator<UpdateTransacti
 
         RuleFor(x => x.Comment)
             .MaximumLength(1000).WithMessage("Comment must be at most 1000 characters long");
+
+        RuleFor(x => x.TransactionTypeId)
+            .NotEqual((int)TransactionTypeEnum.Adjustment).WithMessage("Adjustment transactions cannot be updated");
     }
 }

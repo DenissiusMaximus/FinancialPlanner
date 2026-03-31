@@ -26,14 +26,14 @@ public static class MapConfig
                     dest.DestinationSourceId = null;
             });
 
-        config.NewConfig<CreatePlannedTransactionInput, Transaction>()
+        config.NewConfig<CreatePlannedTransactionInput, PlannedTransaction>()
             .AfterMapping((src, dest) =>
             {
                 if (src.CategoryId == 0 || src.CategoryId == -1)
                     dest.CategoryId = null;
             });
 
-        config.NewConfig<UpdatePlannedTransactionInput, Transaction>()
+        config.NewConfig<UpdatePlannedTransactionInput, PlannedTransaction>()
             .AfterMapping((src, dest) =>
             {
                 if (src.CategoryId == 0 || src.CategoryId == -1)
@@ -45,6 +45,9 @@ public static class MapConfig
             {
                 if (src.CategoryId == 0 || src.CategoryId == -1)
                     dest.CategoryId = null;
+
+                if (src.DestinationSourceId == 0 || src.DestinationSourceId == -1)
+                    dest.DestinationSourceId = null;
             });
 
         config.NewConfig<Frequency, FrequencyDto>()

@@ -1,6 +1,6 @@
 using System.Text.Json.Serialization;
 
-namespace API.Services;
+namespace API.Services.Transaction;
 
 [JsonConverter(typeof(JsonStringEnumConverter))]
 public enum TransactionSortBy

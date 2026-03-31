@@ -1,5 +1,6 @@
 using System.Text;
 using API;
+using API.Domain.BalanceManagement;
 using API.Domain.Calculator;
 using API.Extensions;
 using API.Filters;
@@ -13,6 +14,7 @@ using API.Services.Jwt;
 using API.Services.Logging;
 using API.Services.PlannedTransaction;
 using API.Services.Source;
+using API.Services.Transaction;
 using API.Services.User;
 using API.Utils;
 using API.Utils.ExceptionHandler;
@@ -56,6 +58,8 @@ builder.Services.AddScoped<ITransactionService, TransactionService>();
 builder.Services.AddScoped<IPlannedTransactionService, PlannedTransactionService>();
 builder.Services.AddScoped<IAimService, AimService>();
 builder.Services.AddScoped<IAimProgressCalculator, AimProgressCalculator>();
+
+builder.Services.AddScoped<IBalanceManagementService, BalanceManagementService>();
 
 builder.Services.AddHttpContextAccessor();
 

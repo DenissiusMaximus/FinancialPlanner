@@ -1,7 +1,7 @@
 using API.Inputs;
 using API.Models;
 
-namespace API.Services;
+namespace API.Services.Transaction;
 
 public interface ITransactionService
 {

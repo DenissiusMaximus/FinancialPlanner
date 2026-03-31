@@ -1,3 +1,5 @@
+using API.Services.Transaction;
+
 namespace API.Services;
 
 public class GetUserTransactionsInput
@@ -7,5 +9,6 @@ public class GetUserTransactionsInput
     public DateOnly? FromDate { get; set; }
     public DateOnly? ToDate { get; set; }
     public TransactionSortBy? SortBy { get; set; }
+    public int? CategoryId { get; set; }
     public bool SortDescending { get; set; } = false;
 }

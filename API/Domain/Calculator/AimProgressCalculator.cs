@@ -1,21 +1,15 @@
-using System;
 using API.Dtos;
 using API.Inputs;
 using API.Models;
-using Mapster;
-using System.Linq;
 
 namespace API.Domain.Calculator;
 
-public interface IAimProgressCalculator
-{
-    Task<IReadOnlyCollection<AimDto>> CalculateAimProgress(List<AimDto> aims);
-}
-
 public class AimProgressCalculator : IAimProgressCalculator
 {
-    public async Task<IReadOnlyCollection<AimDto>> CalculateAimProgress(List<AimDto> aims)
+    public async Task<IReadOnlyCollection<AimDto>> CalculateAimProgress(List<AimDto> innerAims)
     {
+        var aims = innerAims.ToList();
+
         var sources = DetermineInvolvedSources(aims);
 
         aims.Sort((a, b) => a.Priority.CompareTo(b.Priority));

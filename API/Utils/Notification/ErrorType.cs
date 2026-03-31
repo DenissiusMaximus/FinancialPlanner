@@ -6,5 +6,6 @@ public enum ErrorType
     NotFound = 404,
     Conflict = 409,
     Forbidden = 403,
-    Unauthorized = 401
+    Unauthorized = 401,
+    ServerError = 500
 }
