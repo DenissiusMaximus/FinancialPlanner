@@ -62,19 +62,37 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
         return transaction;
     }
 
-    public async Task<IReadOnlyCollection<TransactionDto>> GetUsersTransactions(int limit = 100, int offset = 0)
+    public async Task<IReadOnlyCollection<TransactionDto>> GetUsersTransactions(GetUserTransactionsInput input)
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var transactions = await context.Transactions
+        var transactions = context.Transactions
         .AsNoTracking()
         .ProjectToType<TransactionDto>()
         .Where(t => t.UserId == userId)
-        .Skip(offset)
-        .Take(limit)
-        .ToListAsync();
+        .Skip(input.Offset)
+        .Take(input.Limit);
 
-        return transactions;
+        if (input.FromDate != null)
+            transactions = transactions.Where(t => t.Date >= input.FromDate);
+
+        if (input.ToDate != null)
+            transactions = transactions.Where(t => t.Date <= input.ToDate);
+
+        if (input.SortBy != null)
+        {
+            transactions = input.SortBy switch
+            {
+                TransactionSortBy.Date =>
+                input.SortDescending ? transactions.OrderByDescending(t => t.Date) : transactions.OrderBy(t => t.Date),
+
+                TransactionSortBy.Amount => input.SortDescending ? transactions.OrderByDescending(t => t.Amount) : transactions.OrderBy(t => t.Amount),
+
+                _ => transactions
+            };
+        }
+
+        return await transactions.ToListAsync(); ;
     }
 
     public async Task<TransactionDto?> UpdateTransaction(int id, UpdateTransactionInput transactionUpdateDto)

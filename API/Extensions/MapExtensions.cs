@@ -12,9 +12,11 @@ public static class MapConfig
 
     public static void Configure()
     {
+        var config = TypeAdapterConfig.GlobalSettings;
+
         PatchConfig.Default.IgnoreNullValues(true);
 
-        PatchConfig.NewConfig<UpdateTransactionInput, Transaction>()
+        config.NewConfig<UpdateTransactionInput, Transaction>()
             .AfterMapping((src, dest) =>
             {
                 if (src.CategoryId == 0 || src.CategoryId == -1)
@@ -24,10 +26,31 @@ public static class MapConfig
                     dest.DestinationSourceId = null;
             });
 
-        TypeAdapterConfig<Frequency, FrequencyDto>.NewConfig()
+        config.NewConfig<CreatePlannedTransactionInput, Transaction>()
+            .AfterMapping((src, dest) =>
+            {
+                if (src.CategoryId == 0 || src.CategoryId == -1)
+                    dest.CategoryId = null;
+            });
+
+        config.NewConfig<UpdatePlannedTransactionInput, Transaction>()
+            .AfterMapping((src, dest) =>
+            {
+                if (src.CategoryId == 0 || src.CategoryId == -1)
+                    dest.CategoryId = null;
+            });
+
+        config.NewConfig<CreateTransactionInput, Transaction>()
+            .AfterMapping((src, dest) =>
+            {
+                if (src.CategoryId == 0 || src.CategoryId == -1)
+                    dest.CategoryId = null;
+            });
+
+        config.NewConfig<Frequency, FrequencyDto>()
             .Map(dest => dest.IntervalUnit, src => src.IntervalUnitNavigation);
             
-        TypeAdapterConfig<Aim, AimDto>.NewConfig()
+        config.NewConfig<Aim, AimDto>()
             .Map(dest => dest.Sources, src => src.SourceAims.Select(sa => sa.Source));
     }
 }

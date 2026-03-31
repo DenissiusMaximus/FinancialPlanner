@@ -135,6 +135,7 @@ public partial class AppDbContext : DbContext
 
             entity.HasOne(d => d.Category).WithMany(p => p.PlannedTransactions)
                 .HasForeignKey(d => d.CategoryId)
+                .OnDelete(DeleteBehavior.SetNull)
                 .HasConstraintName("FK__PlannedTr__Categ__628FA481");
 
             entity.HasOne(d => d.Currency).WithMany(p => p.PlannedTransactions)
