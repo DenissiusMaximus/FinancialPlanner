@@ -35,6 +35,12 @@ public class CategoryService(AppDbContext context, NotificationContext notificat
 
     public async Task<CategoryDto?> CreateCategory(CreateCategoryInput input)
     {
+        if(string.IsNullOrWhiteSpace(input.Name))
+        {
+            notificationContext.AddNotification("Name is required", ErrorType.BadRequest);
+            return null;
+        }
+
         var userId = currentUserProvider.RequiredUserId;
         var category = input.Adapt<Models.Category>();
         category.UserId = userId;
