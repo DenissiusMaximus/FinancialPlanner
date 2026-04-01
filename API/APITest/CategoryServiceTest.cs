@@ -8,11 +8,6 @@ namespace APITest;
 
 public class CategoryServiceTest : BaseTest
 {
-    public CategoryServiceTest() : base()
-    {
-
-    }
-
     [Fact]
     public async Task GetAllCategories_ReturnsAllCategories()
     {
@@ -203,3 +198,5 @@ public class CategoryServiceTest : BaseTest
         deletedCategory.Should().BeNull();
     }
 }
+
+

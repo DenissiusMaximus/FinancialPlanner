@@ -8,7 +8,7 @@ public class AimProgressCalculator : IAimProgressCalculator
 {
     public async Task<IReadOnlyCollection<AimDto>> CalculateAimProgress(List<AimDto> innerAims)
     {
-        var aims = innerAims.ToList();
+        var aims = new List<AimDto>(innerAims);
 
         var sources = DetermineInvolvedSources(aims);
 
