@@ -14,12 +14,15 @@ public class CategoryServiceTest : BaseTest
         var dbContext = GetInMemoryDbContext();
 
         var testUserId = 1;
+        var otherUserId = 2;
         var testCategoryIds = new[] { 1, 2, 3 };
 
         foreach (var categoryId in testCategoryIds)
         {
             dbContext.Categories.Add(new Category { Id = categoryId, Name = $"Test Category {categoryId}", UserId = testUserId });
         }
+
+        dbContext.Categories.Add(new Category { Id = 99, Name = "Other user category", UserId = otherUserId });
 
         await dbContext.SaveChangesAsync();
 
@@ -32,6 +35,7 @@ public class CategoryServiceTest : BaseTest
 
         result.Should().NotBeNull();
         result.Should().HaveCount(testCategoryIds.Length);
+        result.Should().OnlyContain(c => c.UserId == testUserId);
 
         notificationContext.HasNotifications.Should().BeFalse();
     }
@@ -196,6 +200,47 @@ public class CategoryServiceTest : BaseTest
         var deletedCategory = await dbContext.Categories.FindAsync(category.Id);
 
         deletedCategory.Should().BeNull();
+    }
+
+    [Fact]
+    public async Task UpdateCategory_ReturnsNullForNonExistentId()
+    {
+        var dbContext = GetInMemoryDbContext();
+
+        var testUserId = 1;
+        var updateInput = new UpdateCategoryInput { Name = "Updated Category" };
+
+        var mockUserContext = GetMockUserContext(testUserId);
+        var notificationContext = new NotificationContext();
+
+        var categoryService = new CategoryService(dbContext, notificationContext, mockUserContext);
+
+        var result = await categoryService.UpdateCategory(999, updateInput);
+
+        result.Should().BeNull();
+        notificationContext.HasNotifications.Should().BeTrue();
+        notificationContext.Notifications.Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(ErrorType.NotFound);
+    }
+
+    [Fact]
+    public async Task DeleteCategory_ReturnsFalseForNonExistentId()
+    {
+        var dbContext = GetInMemoryDbContext();
+
+        var testUserId = 1;
+
+        var mockUserContext = GetMockUserContext(testUserId);
+        var notificationContext = new NotificationContext();
+
+        var categoryService = new CategoryService(dbContext, notificationContext, mockUserContext);
+
+        var result = await categoryService.DeleteCategory(999);
+
+        result.Should().BeFalse();
+        notificationContext.HasNotifications.Should().BeTrue();
+        notificationContext.Notifications.Should().ContainSingle()
+            .Which.ErrorCode.Should().Be(ErrorType.NotFound);
     }
 }
 

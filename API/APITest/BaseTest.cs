@@ -2,6 +2,7 @@
 using API.Extensions;
 using API.Utils.UserContext;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Diagnostics;
 using Moq;
 
 namespace APITest;
@@ -21,10 +22,13 @@ public class BaseTest
     {
         var options = new DbContextOptionsBuilder<AppDbContext>()
             .UseInMemoryDatabase(databaseName: Guid.NewGuid().ToString())
+            .ConfigureWarnings(w => w.Ignore(InMemoryEventId.TransactionIgnoredWarning))
             .Options;
 
         return new AppDbContext(options);
     }
+
+    
 
     protected ICurrentUserContext GetMockUserContext(int userId)
     {

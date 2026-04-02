@@ -81,13 +81,13 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
 
         var transaction = context.Transactions.FirstOrDefault(t => t.Id == id && t.UserId == userId);
 
-        var originalTransaction = transaction.Adapt<Models.Transaction>();
-
         if (transaction == null)
         {
             notificationContext.AddNotification("Transaction not found", ErrorType.NotFound);
             return null;
         }
+
+        var originalTransaction = transaction.Adapt<Models.Transaction>();
 
         if (transaction.TransactionTypeId == (int)TransactionTypeEnum.Adjustment)
         {

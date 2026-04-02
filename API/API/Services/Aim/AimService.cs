@@ -104,7 +104,7 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
 
         var aimWithProgress = await aimProgressCalculator.CalculateAimProgress(aims);
 
-        return aims.FirstOrDefault(a => a.Id == id);
+        return aimWithProgress.FirstOrDefault(a => a.Id == id);
 
     }
 

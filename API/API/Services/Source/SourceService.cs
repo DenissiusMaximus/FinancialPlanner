@@ -70,8 +70,7 @@ public class SourceService(
     public async Task<SourceDtoLookup?> ArchiveSource(int sourceId)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
-            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
+        var source = await context.Sources.FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
         {
@@ -83,14 +82,19 @@ public class SourceService(
         source.IsArchived = true;
         await context.SaveChangesAsync();
 
-        return source;
+        var updatedSource = await context.Sources
+            .AsNoTracking()
+            .Where(s => s.Id == sourceId && s.UserId == userId)
+            .ProjectToType<SourceDtoLookup>()
+            .FirstOrDefaultAsync();
+
+        return updatedSource;
     }
 
     public async Task<SourceDtoLookup?> UnArchiveSource(int sourceId)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
-            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
+        var source = await context.Sources.FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
         {
@@ -102,14 +106,19 @@ public class SourceService(
 
         await context.SaveChangesAsync();
 
-        return source;
+        var updatedSource = await context.Sources
+            .AsNoTracking()
+            .Where(s => s.Id == sourceId && s.UserId == userId)
+            .ProjectToType<SourceDtoLookup>()
+            .FirstOrDefaultAsync();
+
+        return updatedSource;
     }
 
     public async Task<SourceDtoLookup?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto)
     {
         var userId = currentUserProvider.RequiredUserId;
-        var source = await context.Sources.ProjectToType<SourceDtoLookup>()
-            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
+        var source = await context.Sources.FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
 
         if (source == null)
         {

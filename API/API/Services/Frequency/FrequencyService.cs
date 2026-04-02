@@ -54,8 +54,8 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
         var userId = currentUserProvider.RequiredUserId;
         var frequencies = await context.Frequencies
             .AsNoTracking()
-            .ProjectToType<FrequencyDto>()
             .Where(f => f.UserId == userId || f.UserId == null)
+            .ProjectToType<FrequencyDto>()
             .ToListAsync();
 
         return frequencies;
@@ -94,7 +94,6 @@ public class FrequencyService(AppDbContext context, NotificationContext notifica
     {
         var userId = currentUserProvider.RequiredUserId;
         var existingFrequency = await context.Frequencies
-            .ProjectToType<FrequencyDto>()
             .FirstOrDefaultAsync(f => f.Id == id && f.UserId == userId);
 
         if (existingFrequency == null)
