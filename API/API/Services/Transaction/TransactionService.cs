@@ -9,32 +9,32 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.Transaction;
 
-public class TransactionService(AppDbContext context, ICurrentUserContext currentUserContext, NotificationContext notificationContext, IBalanceManagementService balanceManagementService) : ITransactionService
+public class TransactionService(
+    AppDbContext context,
+    ICurrentUserContext currentUserContext,
+    NotificationContext notificationContext,
+    IBalanceManagementService balanceManagementService) : ITransactionService
 {
     public async Task<TransactionDto?> CreateTransaction(CreateTransactionInput createTransactionInput)
     {
         var userId = currentUserContext.RequiredUserId;
 
-        await using var dbTransaction = await context.Database.BeginTransactionAsync();
-
-        var transaction = createTransactionInput.Adapt<Models.Transaction>();
-        transaction.UserId = userId;
-
-        var addedTransaction = context.Transactions.Add(transaction);
-
-        if (addedTransaction == null)
-        {
-            notificationContext.AddNotification("Failed to create transaction", ErrorType.ServerError);
-            return null;
-        }
-
-        var source = await context.Sources.FirstOrDefaultAsync(s => s.Id == addedTransaction.Entity.SourceId && s.UserId == userId);
+        var source =
+            await context.Sources.FirstOrDefaultAsync(s =>
+                s.Id == createTransactionInput.SourceId && s.UserId == userId);
 
         if (source == null)
         {
             notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
         }
+
+        var transaction = createTransactionInput.Adapt<Models.Transaction>();
+        transaction.UserId = userId;
+
+        await using var dbTransaction = await context.Database.BeginTransactionAsync();
+        
+        var addedTransaction = context.Transactions.Add(transaction);
 
         if (!await balanceManagementService.UpdateAmounts(addedTransaction.Entity, source, userId))
             return null;
@@ -43,10 +43,9 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
         await dbTransaction.CommitAsync();
 
         return await context.Transactions
-        .AsNoTracking()
-        .ProjectToType<TransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.UserId == userId);
-
+            .AsNoTracking()
+            .ProjectToType<TransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == transaction.Id && t.UserId == userId);
     }
 
     public async Task<bool> DeleteTransaction(int id)
@@ -72,7 +71,11 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
             return false;
 
         context.Transactions.Remove(transaction);
-        return await context.SaveChangesAsync() > 0;
+
+        var result = await context.SaveChangesAsync();
+        await dbTransaction.CommitAsync();
+        
+        return result > 0;
     }
 
     public async Task<TransactionDto?> UpdateTransaction(int id, UpdateTransactionInput transactionUpdateDto)
@@ -95,15 +98,21 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
             return null;
         }
 
-        await using var dbTransaction = await context.Database.BeginTransactionAsync();
         var updatedTransaction = transactionUpdateDto.AdaptIgnoreNull(transaction);
+        
+        await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
-        if (updatedTransaction.Amount != originalTransaction.Amount || updatedTransaction.TransactionTypeId != originalTransaction.TransactionTypeId || updatedTransaction.SourceId != originalTransaction.SourceId || updatedTransaction.DestinationSourceId != originalTransaction.DestinationSourceId)
+        if (updatedTransaction.Amount != originalTransaction.Amount ||
+            updatedTransaction.TransactionTypeId != originalTransaction.TransactionTypeId ||
+            updatedTransaction.SourceId != originalTransaction.SourceId || updatedTransaction.DestinationSourceId !=
+            originalTransaction.DestinationSourceId)
         {
             if (!await balanceManagementService.ResetTransaction(originalTransaction, userId))
                 return null;
 
-            var source = await context.Sources.FirstOrDefaultAsync(s => s.Id == updatedTransaction.SourceId && s.UserId == userId);
+            var source =
+                await context.Sources.FirstOrDefaultAsync(s =>
+                    s.Id == updatedTransaction.SourceId && s.UserId == userId);
             if (source == null)
             {
                 notificationContext.AddNotification("Source not found", ErrorType.NotFound);
@@ -112,19 +121,17 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
 
             if (!await balanceManagementService.UpdateAmounts(updatedTransaction, source, userId))
                 return null;
-
         }
 
         await context.SaveChangesAsync();
         await dbTransaction.CommitAsync();
 
         var updatedTransactionDto = await context.Transactions
-        .AsNoTracking()
-        .ProjectToType<TransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+            .AsNoTracking()
+            .ProjectToType<TransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
         return updatedTransactionDto;
-
     }
 
     public async Task<TransactionDto?> GetTransactionById(int id)
@@ -132,9 +139,9 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
         var userId = currentUserContext.RequiredUserId;
 
         var transaction = await context.Transactions
-        .AsNoTracking()
-        .ProjectToType<TransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+            .AsNoTracking()
+            .ProjectToType<TransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
         if (transaction == null)
         {
@@ -150,35 +157,16 @@ public class TransactionService(AppDbContext context, ICurrentUserContext curren
         var userId = currentUserContext.RequiredUserId;
 
         var transactions = context.Transactions
-        .AsNoTracking()
-        .ProjectToType<TransactionDto>()
-        .Where(t => t.UserId == userId);
-
-        if (input.CategoryId != null)
-            transactions = transactions.Where(t => t.Category != null && t.Category.Id == input.CategoryId);
-
-        if (input.FromDate != null)
-            transactions = transactions.Where(t => t.Date >= input.FromDate);
-
-        if (input.ToDate != null)
-            transactions = transactions.Where(t => t.Date <= input.ToDate);
-
-        if (input.SortBy != null)
-        {
-            transactions = input.SortBy switch
-            {
-                TransactionSortBy.Date =>
-                input.SortDescending ? transactions.OrderByDescending(t => t.Date) : transactions.OrderBy(t => t.Date),
-
-                TransactionSortBy.Amount => input.SortDescending ? transactions.OrderByDescending(t => t.Amount) : transactions.OrderBy(t => t.Amount),
-
-                _ => transactions
-            };
-        }
+            .AsNoTracking()
+            .ProjectToType<TransactionDto>()
+            .Where(t => t.UserId == userId)
+            .FilterByCategory(input.CategoryId)
+            .FilterByDateRange(input.FromDate, input.ToDate)
+            .ApplySorting(input.SortBy, input.SortDescending);
 
         return await transactions
-        .Skip(input.Offset)
-        .Take(input.Limit)
-        .ToListAsync();
+            .Skip(input.Offset)
+            .Take(input.Limit)
+            .ToListAsync();
     }
 }
