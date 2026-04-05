@@ -7,6 +7,14 @@ namespace API.Domain.BalanceManagement;
 
 public class BalanceManagementService(AppDbContext context, NotificationContext notificationContext) : IBalanceManagementService
 {
+    public bool IsTransactionModified(Models.Transaction original, Models.Transaction updated)
+    {
+        return original.Amount != updated.Amount || 
+               original.TransactionTypeId != updated.TransactionTypeId || 
+               original.SourceId != updated.SourceId || 
+               original.DestinationSourceId != updated.DestinationSourceId;
+    }
+    
     public async Task<bool> TransferTransaction(int userId, Models.Transaction transaction, Models.Source source)
     {
         var destinationSource = await context.Sources.FirstOrDefaultAsync(s => s.Id == transaction.DestinationSourceId && s.UserId == userId);

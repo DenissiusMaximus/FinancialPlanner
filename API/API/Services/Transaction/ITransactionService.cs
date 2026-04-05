@@ -11,4 +11,5 @@ public interface ITransactionService
     Task<TransactionDto?> CreateTransaction(CreateTransactionInput transactionCreateDto);
     Task<TransactionDto?> UpdateTransaction(int id, UpdateTransactionInput transactionUpdateDto);
     Task<bool> DeleteTransaction(int id);
+    
 }

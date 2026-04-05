@@ -103,17 +103,14 @@ public class TransactionService(
         
         await using var dbTransaction = await context.Database.BeginTransactionAsync();
 
-        if (updatedTransaction.Amount != originalTransaction.Amount ||
-            updatedTransaction.TransactionTypeId != originalTransaction.TransactionTypeId ||
-            updatedTransaction.SourceId != originalTransaction.SourceId || updatedTransaction.DestinationSourceId !=
-            originalTransaction.DestinationSourceId)
+        if (balanceManagementService.IsTransactionModified(originalTransaction, updatedTransaction))
         {
             if (!await balanceManagementService.ResetTransaction(originalTransaction, userId))
                 return null;
 
-            var source =
-                await context.Sources.FirstOrDefaultAsync(s =>
+            var source = await context.Sources.FirstOrDefaultAsync(s =>
                     s.Id == updatedTransaction.SourceId && s.UserId == userId);
+            
             if (source == null)
             {
                 notificationContext.AddNotification("Source not found", ErrorType.NotFound);
