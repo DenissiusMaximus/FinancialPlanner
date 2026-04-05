@@ -1,4 +1,5 @@
 using API.Models;
+using API.Services;
 using API.Services.PlannedTransaction;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
@@ -12,9 +13,9 @@ public class PlannedTransactionController(IPlannedTransactionService transaction
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyCollection<PlannedTransactionDto>>> GetUsersTransactions([FromQuery] int limit = 100, [FromQuery] int offset = 0)
+    public async Task<ActionResult<IReadOnlyCollection<PlannedTransactionDto>>> GetUsersTransactions([FromQuery]GetUserPlannedTransactionsInput input)
     {
-        return Ok(await transactionService.GetUsersPlannedTransactions(limit, offset));
+        return Ok(await transactionService.GetUsersPlannedTransactions(input));
     }
 
     [HttpGet("{id}")]

@@ -108,15 +108,32 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
 
     }
 
-    public async Task<IReadOnlyCollection<AimDto>> GetAims()
+    public async Task<PaginatedResult<AimDto>> GetAims(GetAimsInput input)
     {
         var userId = currentUserContext.RequiredUserId;
         var aims = await context.Aims
+        .AsNoTracking()
         .Where(a => a.UserId == userId)
+        .FilterBySources(input.SourceIds)
+        .FilterByClosed(input.ClosedOnly)
+        .ApplySorting(input.SortBy, input.SortDescending)
         .ProjectToType<AimDto>()
+        .Skip(input.Offset)
+        .Take(input.Limit)  
         .ToListAsync();
-
-        return await aimProgressCalculator.CalculateAimProgress(aims);
+        
+        var calculatedAims = await aimProgressCalculator.CalculateAimProgress(aims);
+        
+        return new PaginatedResult<AimDto>
+        {
+            Data = calculatedAims,
+            Meta = new PaginationMeta
+            {
+                TotalCount = aims.Count,
+                Limit = input.Limit,
+                Offset = input.Offset
+            }
+        };
     }
 
     public async Task<AimDto?> UpdateAim(int id, UpdateAimInput input)

@@ -134,11 +134,11 @@ public class AimServiceTest : BaseTest
 		var mockUserContext = GetMockUserContext(testUserId);
 		var calculatorMock = GetCalculatorMock();
 		var aimService = new AimService(notificationContext, dbContext, mockUserContext, calculatorMock.Object);
+		
+		var result = await aimService.GetAims(new GetAimsInput());
 
-		var result = await aimService.GetAims();
-
-		result.Should().HaveCount(2);
-		result.Should().OnlyContain(a => a.UserId == testUserId);
+		result.Data.Should().HaveCount(2);
+		result.Data.Should().OnlyContain(a => a.UserId == testUserId);
 		notificationContext.HasNotifications.Should().BeFalse();
 		calculatorMock.Verify(c => c.CalculateAimProgress(It.Is<List<AimDto>>(a => a.Count == 2)), Times.Once);
 	}

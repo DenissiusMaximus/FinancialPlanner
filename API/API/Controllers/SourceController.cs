@@ -11,10 +11,17 @@ namespace API.Controllers;
 public class SourceController(ISourceService sourceService) : ControllerBase
 {
     [Authorize]
+    [HttpGet("summary")]
+    public async Task<ActionResult<SourceSummaryDto>> GetSummary()
+    {
+        return Ok(await sourceService.GetSourceSummary());
+    }
+    
+    [Authorize]
     [HttpGet]
     public async Task<ActionResult<List<SourceDtoLookup>>> Get()
     {
-        return Ok((IReadOnlyCollection<SourceDtoLookup>?)await sourceService.GetSources());
+        return Ok(await sourceService.GetSources());
     }
 
     [Authorize]

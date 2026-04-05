@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Extensions;
 using API.Models;
 using API.Utils.Notification;
@@ -7,7 +8,10 @@ using Microsoft.EntityFrameworkCore;
 
 namespace API.Services.PlannedTransaction;
 
-public class PlannedTransactionService(AppDbContext context, ICurrentUserContext currentUserContext, NotificationContext notificationContext) : IPlannedTransactionService
+public class PlannedTransactionService(
+    AppDbContext context,
+    ICurrentUserContext currentUserContext,
+    NotificationContext notificationContext) : IPlannedTransactionService
 {
     public async Task<PlannedTransactionDto?> CreatePlannedTransaction(CreatePlannedTransactionInput input)
     {
@@ -21,9 +25,9 @@ public class PlannedTransactionService(AppDbContext context, ICurrentUserContext
         await context.SaveChangesAsync();
 
         var createdTransaction = await context.PlannedTransactions
-        .AsNoTracking()
-        .ProjectToType<PlannedTransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == addedTransaction.Entity.Id && t.UserId == userId);
+            .AsNoTracking()
+            .ProjectToType<PlannedTransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == addedTransaction.Entity.Id && t.UserId == userId);
 
         return createdTransaction;
     }
@@ -48,9 +52,9 @@ public class PlannedTransactionService(AppDbContext context, ICurrentUserContext
         var userId = currentUserContext.RequiredUserId;
 
         var transaction = await context.PlannedTransactions
-        .AsNoTracking()
-        .ProjectToType<PlannedTransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+            .AsNoTracking()
+            .ProjectToType<PlannedTransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
         if (transaction == null)
         {
@@ -61,22 +65,37 @@ public class PlannedTransactionService(AppDbContext context, ICurrentUserContext
         return transaction;
     }
 
-    public async Task<IReadOnlyCollection<PlannedTransactionDto>> GetUsersPlannedTransactions(int limit = 100, int offset = 0)
+    public async Task<PaginatedResult<PlannedTransactionDto>> GetUsersPlannedTransactions(
+        GetUserPlannedTransactionsInput input)
     {
         var userId = currentUserContext.RequiredUserId;
 
         var transactions = await context.PlannedTransactions
-        .AsNoTracking()
-        .ProjectToType<PlannedTransactionDto>()
-        .Where(t => t.UserId == userId)
-        .Skip(offset)
-        .Take(limit)
-        .ToListAsync();
+            .AsNoTracking()
+            .Where(t => t.UserId == userId)
+            .FilterByAmount(input.MinAmount, input.MaxAmount)
+            .ApplySorting(input.SortDescending)
+            .ProjectToType<PlannedTransactionDto>()
+            .Skip(input.Offset)
+            .Take(input.Limit)
+            .ToListAsync();
 
-        return transactions;
+        var paginatedResult = new PaginatedResult<PlannedTransactionDto>
+        {
+            Data = transactions,
+            Meta = new PaginationMeta
+            {
+                TotalCount = await context.PlannedTransactions.CountAsync(t => t.UserId == userId),
+                Limit = input.Limit,
+                Offset = input.Offset
+            }
+        };
+
+        return paginatedResult;
     }
 
-    public async Task<PlannedTransactionDto?> UpdatePlannedTransaction(int id, UpdatePlannedTransactionInput transactionUpdateDto)
+    public async Task<PlannedTransactionDto?> UpdatePlannedTransaction(int id,
+        UpdatePlannedTransactionInput transactionUpdateDto)
     {
         var userId = currentUserContext.RequiredUserId;
 
@@ -93,9 +112,9 @@ public class PlannedTransactionService(AppDbContext context, ICurrentUserContext
         await context.SaveChangesAsync();
 
         var updatedTransaction = await context.PlannedTransactions
-        .AsNoTracking()
-        .ProjectToType<PlannedTransactionDto>()
-        .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
+            .AsNoTracking()
+            .ProjectToType<PlannedTransactionDto>()
+            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
 
         return updatedTransaction;
     }

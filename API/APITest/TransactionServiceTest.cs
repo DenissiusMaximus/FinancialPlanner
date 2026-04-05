@@ -419,9 +419,9 @@ public class TransactionServiceTest : BaseTest
 
         var result = await service.GetUsersTransactions(input);
 
-        result.Should().HaveCount(2);
-        result.First().Amount.Should().Be(300);
-        result.Last().Amount.Should().Be(100);
+        result.Data.Should().HaveCount(2);
+        result.Data.First().Amount.Should().Be(300);
+        result.Data.Last().Amount.Should().Be(100);
     }
 
     [Fact]
@@ -445,8 +445,8 @@ public class TransactionServiceTest : BaseTest
 
         var result = await service.GetUsersTransactions(new GetUserTransactionsInput { CategoryId = 1, Limit = 10, Offset = 0 });
 
-        result.Should().ContainSingle();
-        result.First().Category!.Id.Should().Be(1);
+        result.Data.Should().ContainSingle();
+        result.Data.First().Category!.Id.Should().Be(1);
     }
 
     private static async Task SeedTransactionDependencies(API.AppDbContext dbContext, int userId)

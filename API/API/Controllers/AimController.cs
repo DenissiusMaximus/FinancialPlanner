@@ -1,7 +1,7 @@
+using API.Dtos;
 using API.Inputs;
 using API.Services.Aim;
 using Microsoft.AspNetCore.Authorization;
-using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
@@ -12,7 +12,7 @@ public class AimController(IAimService aimService) : ControllerBase
 {
     [Authorize]
     [HttpGet("{id}")]
-    public async Task<IActionResult> GetAim(int id)
+    public async Task<ActionResult<AimDto>> GetAim(int id)
     {
         var aim = await aimService.GetAim(id);
 
@@ -21,16 +21,16 @@ public class AimController(IAimService aimService) : ControllerBase
 
     [Authorize]
     [HttpGet]
-    public async Task<IActionResult> GetAims()
+    public async Task<ActionResult<AimDto>> GetAims([FromQuery]GetAimsInput input)
     {
-        var aims = await aimService.GetAims();
+        var aims = await aimService.GetAims(input);
 
         return Ok(aims);
     }
 
     [Authorize]
     [HttpPost]
-    public async Task<IActionResult> CreateAim(CreateAimInput input)
+    public async Task<ActionResult<AimDto>> CreateAim(CreateAimInput input)
     {
         var aim = await aimService.CreateAim(input);
 
@@ -39,7 +39,7 @@ public class AimController(IAimService aimService) : ControllerBase
 
     [Authorize]
     [HttpPatch("{id}")]
-    public async Task<IActionResult> UpdateAim(int id, UpdateAimInput input)
+    public async Task<ActionResult<AimDto>> UpdateAim(int id, UpdateAimInput input)
     {
         var aim = await aimService.UpdateAim(id, input);
 
@@ -48,7 +48,7 @@ public class AimController(IAimService aimService) : ControllerBase
 
     [Authorize]
     [HttpDelete("{id}")]
-    public async Task<IActionResult> DeleteAim(int id)
+    public async Task<ActionResult<bool>> DeleteAim(int id)
     {
         var result = await aimService.DeleteAim(id);
 
@@ -57,7 +57,7 @@ public class AimController(IAimService aimService) : ControllerBase
 
     [Authorize]
     [HttpPost("{aimId}/sources/{sourceId}")]
-    public async Task<IActionResult> AddSourceToAim(int aimId, int sourceId)
+    public async Task<ActionResult<SourceDtoLookup>> AddSourceToAim(int aimId, int sourceId)
     {
         var source = await aimService.AddSourceToAim(aimId, sourceId);
 
@@ -66,7 +66,7 @@ public class AimController(IAimService aimService) : ControllerBase
 
     [Authorize]
     [HttpDelete("{aimId}/sources/{sourceId}")]
-    public async Task<IActionResult> RemoveSourceFromAim(int aimId, int sourceId)
+    public async Task<ActionResult<bool>> RemoveSourceFromAim(int aimId, int sourceId)
     {
         var result = await aimService.RemoveSourceFromAim(aimId, sourceId);
 

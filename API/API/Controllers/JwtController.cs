@@ -9,11 +9,11 @@ namespace API.Controllers;
 public class JwtController(IJwtService jwtService) : ControllerBase
 {
     [HttpPost("refreshToken")]
-    public async Task<IActionResult> RefreshToken([FromBody]string refreshToken)
+    public async Task<ActionResult<string>> RefreshToken([FromBody] string refreshToken)
     {
         var newAccessToken = await jwtService.RefreshToken(refreshToken);
 
-        if (newAccessToken == null) 
+        if (newAccessToken == null)
             return BadRequest("Invalid refresh token");
 
         return Ok(newAccessToken);

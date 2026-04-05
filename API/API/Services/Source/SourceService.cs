@@ -13,6 +13,23 @@ public class SourceService(
     NotificationContext notificationContext,
     ICurrentUserContext currentUserProvider) : ISourceService
 {
+    public async Task<SourceSummaryDto> GetSourceSummary()
+    {
+        var userId = currentUserProvider.RequiredUserId;
+
+        var result = await context.Sources
+            .AsNoTracking()
+            .Where(s => s.UserId == userId)
+            .ProjectToType<SourceDtoLookup>()
+            .ToListAsync();
+
+        return new SourceSummaryDto
+        {
+            Total = result.Sum(s => s.Amount),
+            Sources = result
+        };
+    }
+    
     public async Task<SourceDtoDetailed?> GetSourceById(int sourceId)
     {
         var userId = currentUserProvider.RequiredUserId;

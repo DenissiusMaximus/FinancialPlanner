@@ -1,4 +1,5 @@
 using API.Domain.BalanceManagement;
+using API.Dtos;
 using API.Extensions;
 using API.Inputs;
 using API.Models;
@@ -152,21 +153,34 @@ public class TransactionService(
         return transaction;
     }
 
-    public async Task<IReadOnlyCollection<TransactionDto>> GetUsersTransactions(GetUserTransactionsInput input)
+    public async Task<PaginatedResult<TransactionDto>> GetUsersTransactions(GetUserTransactionsInput input)
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var transactions = context.Transactions
+        var transactions = await context.Transactions
             .AsNoTracking()
-            .ProjectToType<TransactionDto>()
             .Where(t => t.UserId == userId)
             .FilterByCategory(input.CategoryId)
             .FilterByDateRange(input.FromDate, input.ToDate)
-            .ApplySorting(input.SortBy, input.SortDescending);
-
-        return await transactions
+            .ApplySorting(input.SortBy, input.SortDescending)
+            .ProjectToType<TransactionDto>()
             .Skip(input.Offset)
             .Take(input.Limit)
             .ToListAsync();
+        
+        var totalCount = await context.Transactions.CountAsync(t => t.UserId == userId);
+
+        var paginated = new PaginatedResult<TransactionDto>
+        {
+            Data = transactions,
+            Meta = new PaginationMeta
+            {
+                TotalCount = totalCount,
+                Limit = input.Limit,
+                Offset = input.Offset
+            }
+        };
+
+        return paginated;
     }
 }

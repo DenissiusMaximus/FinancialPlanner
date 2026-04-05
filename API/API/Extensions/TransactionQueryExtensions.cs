@@ -5,7 +5,7 @@ namespace API.Extensions;
 
 public static class TransactionQueryExtensions
 {
-    public static IQueryable<TransactionDto> FilterByCategory(this IQueryable<TransactionDto> query, int? categoryId)
+    public static IQueryable<Transaction> FilterByCategory(this IQueryable<Transaction> query, int? categoryId)
     {
         if (categoryId == null)
             return query;
@@ -13,7 +13,7 @@ public static class TransactionQueryExtensions
         return query.Where(t => t.Category != null && t.Category.Id == categoryId);
     }
 
-    public static IQueryable<TransactionDto> FilterByDateRange(this IQueryable<TransactionDto> query,
+    public static IQueryable<Transaction> FilterByDateRange(this IQueryable<Transaction> query,
         DateOnly? fromDate, DateOnly? toDate)
     {
         if (fromDate != null)
@@ -25,7 +25,7 @@ public static class TransactionQueryExtensions
         return query;
     }
 
-    public static IQueryable<TransactionDto> ApplySorting(this IQueryable<TransactionDto> query,
+    public static IQueryable<Transaction> ApplySorting(this IQueryable<Transaction> query,
         TransactionSortBy? sortBy, bool sortDescending)
     {
         if (!sortBy.HasValue) return query;

@@ -1,4 +1,5 @@
 using API.Models;
+using API.Services;
 using API.Services.PlannedTransaction;
 using API.Utils.Notification;
 using FluentAssertions;
@@ -90,10 +91,10 @@ public class PlannedTransactionServiceTest : BaseTest
 
         var service = new PlannedTransactionService(dbContext, GetMockUserContext(1), new NotificationContext());
 
-        var result = await service.GetUsersPlannedTransactions();
+        var result = await service.GetUsersPlannedTransactions(new());
 
-        result.Should().ContainSingle();
-        result.First().UserId.Should().Be(1);
+        result.Data.Should().ContainSingle();
+        result.Data.First().UserId.Should().Be(1);
     }
 
     [Fact]
@@ -112,9 +113,9 @@ public class PlannedTransactionServiceTest : BaseTest
 
         var service = new PlannedTransactionService(dbContext, GetMockUserContext(userId), new NotificationContext());
 
-        var result = await service.GetUsersPlannedTransactions(limit: 1, offset: 1);
+        var result = await service.GetUsersPlannedTransactions(new GetUserPlannedTransactionsInput { Limit = 1, Offset = 1 });
 
-        result.Should().ContainSingle();
+        result.Data.Should().ContainSingle();
     }
 
     [Fact]

@@ -1,3 +1,4 @@
+using API.Dtos;
 using API.Inputs;
 using API.Models;
 using API.Services;
@@ -13,9 +14,11 @@ public class TransactionController(ITransactionService transactionService) : Con
 {
     [HttpGet]
     [Authorize]
-    public async Task<ActionResult<IReadOnlyCollection<TransactionDto>>> GetUsersTransactions([FromQuery] GetUserTransactionsInput input)
+    public async Task<ActionResult<PaginatedResult<TransactionDto>>> GetUsersTransactions([FromQuery] GetUserTransactionsInput input)
     {
-        return Ok(await transactionService.GetUsersTransactions(input));
+        var result = await transactionService.GetUsersTransactions(input);
+
+        return Ok(result);
     }
 
     [HttpGet("{id}")]

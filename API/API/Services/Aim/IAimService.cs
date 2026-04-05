@@ -8,7 +8,7 @@ namespace API.Services.Aim;
 public interface IAimService
 {
     Task<AimDto?> GetAim(int id);
-    Task<IReadOnlyCollection<AimDto>> GetAims();
+    Task<PaginatedResult<AimDto>> GetAims(GetAimsInput input);
     Task<AimDto?> CreateAim(CreateAimInput input);
     Task<AimDto?> UpdateAim(int id, UpdateAimInput input);
     Task<bool> DeleteAim(int id);
