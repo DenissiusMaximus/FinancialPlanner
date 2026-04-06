@@ -263,7 +263,9 @@ public class TransactionServiceTest : BaseTest
         var balanceManagementServiceMock = new Mock<IBalanceManagementService>();
         balanceManagementServiceMock.Setup(b => b.ResetTransaction(It.IsAny<Transaction>(), 1)).ReturnsAsync(true);
         balanceManagementServiceMock.Setup(b => b.UpdateAmounts(It.IsAny<Transaction>(), It.IsAny<Source>(), 1)).ReturnsAsync(true);
-
+        
+        balanceManagementServiceMock.Setup(b => b.IsTransactionModified(It.IsAny<Transaction>(), It.IsAny<Transaction>())).Returns(true);
+        
         var notificationContext = new NotificationContext();
         var service = new TransactionService(dbContext, GetMockUserContext(1), notificationContext, balanceManagementServiceMock.Object);
 
