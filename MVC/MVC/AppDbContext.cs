@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using API.Models;
 using Microsoft.EntityFrameworkCore;
@@ -21,6 +21,8 @@ public partial class AppDbContext : DbContext
     public virtual DbSet<BlacklistedToken> BlacklistedTokens { get; set; }
 
     public virtual DbSet<Category> Categories { get; set; }
+
+    public virtual DbSet<SubCategory> SubCategories { get; set; }
 
     public virtual DbSet<Currency> Currencies { get; set; }
 

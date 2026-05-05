@@ -57,6 +57,8 @@ builder.Services.AddScoped<IAimProgressCalculator, AimProgressCalculator>();
 
 builder.Services.AddScoped<IBalanceManagementService, BalanceManagementService>();
 
+builder.Services.AddScoped<API.Repositories.ILabRepository, API.Repositories.LabRepository>();
+
 builder.Services.AddHttpContextAccessor();
 builder.Services.AddSession();
 
