@@ -32,6 +32,23 @@ var builder = WebApplication.CreateBuilder(args);
 
 MapConfig.Configure();
 
+var allowedOrigins = builder.Configuration
+    .GetSection("AllowedOrigins")
+    .Get<string[]>()?
+    .Select(origin => origin.TrimEnd('/'))
+    .ToArray() ?? [];
+
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+            .AllowAnyMethod()
+            .AllowAnyHeader();
+    });
+});
+
+
 builder.Host.UseSerilog(((context, configuration) => configuration
         .WriteTo.Console()
         .WriteTo.File("logs/log-.log", rollingInterval: RollingInterval.Day)
@@ -97,6 +114,8 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 builder.Services.AddProblemDetails();
 
 var app = builder.Build();
+
+app.UseCors();
 
 if (app.Environment.IsDevelopment())
 {

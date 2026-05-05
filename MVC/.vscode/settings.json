@@ -1,0 +1,9 @@
+{
+    "files.exclude": {
+        "obj": true,
+        "bin": true,
+        ".idea": true,
+        ".vscode": true
+    },
+    "logViewerPlus.watch": []
+}

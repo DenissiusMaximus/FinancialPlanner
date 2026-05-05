@@ -25,6 +25,13 @@ public class SourceController(ISourceService sourceService) : ControllerBase
     }
 
     [Authorize]
+    [HttpDelete("{id}")]
+    public async Task<ActionResult<bool>> Delete(int id)
+    {
+        return Ok(await sourceService.DeleteSource(id));
+    }
+
+    [Authorize]
     [HttpGet("{id}")]
     public async Task<ActionResult<SourceDtoDetailed>> GetById(int id)
     {

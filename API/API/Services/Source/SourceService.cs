@@ -155,4 +155,21 @@ public class SourceService(
 
         return updatedSource;
     }
+
+    public Task<bool> DeleteSource(int sourceId)
+    {
+        var userId = currentUserProvider.RequiredUserId;
+        var source = context.Sources.FirstOrDefault(s => s.Id == sourceId && s.UserId == userId);
+
+        if (source == null)
+        {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
+            return Task.FromResult(false);
+        }
+
+        context.Sources.Remove(source);
+        context.SaveChanges();
+
+        return Task.FromResult(true);
+    }
 }

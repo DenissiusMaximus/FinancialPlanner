@@ -12,4 +12,5 @@ public interface ISourceService
     Task<IReadOnlyCollection<SourceDtoLookup>> GetSources();
     Task<SourceDtoLookup?> UpdateSource(int sourceId, UpdateSourceInput updateSourceDto);
     Task<SourceSummaryDto> GetSourceSummary();
+    Task<bool> DeleteSource(int sourceId);
 }
