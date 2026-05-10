@@ -117,23 +117,23 @@ var app = builder.Build();
 
 app.UseCors();
 
-if (app.Environment.IsDevelopment())
-{
-    using var scope = app.Services.CreateScope();
-    var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
+// if (app.Environment.IsDevelopment())
+// {
+//     using var scope = app.Services.CreateScope();
+//     var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
 
-    var devToken = jwtService.GenerateDevAccessToken(1);
+//     var devToken = jwtService.GenerateDevAccessToken(1);
 
-    app.Use(async (context, next) =>
-    {
-        if (!context.Request.Headers.ContainsKey("Authorization"))
-        {
-            context.Request.Headers.Append("Authorization", $"Bearer {devToken}");
-        }
+//     app.Use(async (context, next) =>
+//     {
+//         if (!context.Request.Headers.ContainsKey("Authorization"))
+//         {
+//             context.Request.Headers.Append("Authorization", $"Bearer {devToken}");
+//         }
 
-        await next();
-    });
-}
+//         await next();
+//     });
+// }
 
 
 app.UseExceptionHandler();

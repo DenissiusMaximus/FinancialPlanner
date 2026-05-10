@@ -42,7 +42,6 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
         return source.Adapt<SourceDtoLookup>();
     }
 
-
     public async Task<bool> RemoveSourceFromAim(int aimId, int sourceId)
     {
         var userId = currentUserContext.RequiredUserId;
@@ -65,6 +64,7 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
         aim.UserId = userId;
 
         var newAim = context.Aims.Add(aim);
+
         await context.SaveChangesAsync();
 
         return newAim.Entity.Adapt<AimDto>();
@@ -79,6 +79,14 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
         {
             notificationContext.AddNotification("Aim not found", ErrorType.NotFound);
             return false;
+        }
+    
+        var sourceAims = await context.SourceAims.Where(sa => sa.AimId == id).ToListAsync();
+    
+        if(sourceAims.Count > 0)
+        {
+            context.SourceAims.RemoveRange(sourceAims);
+            await context.SaveChangesAsync();  
         }
 
         context.Aims.Remove(aim);
@@ -114,22 +122,29 @@ public class AimService(NotificationContext notificationContext, AppDbContext co
         var aims = await context.Aims
         .AsNoTracking()
         .Where(a => a.UserId == userId)
+        .ProjectToType<AimDto>()
+        .ToListAsync();
+
+        var calculatedAims = (await aimProgressCalculator.CalculateAimProgress(aims))
         .FilterBySources(input.SourceIds)
         .FilterByClosed(input.ClosedOnly)
         .ApplySorting(input.SortBy, input.SortDescending)
-        .ProjectToType<AimDto>()
         .Skip(input.Offset)
-        .Take(input.Limit)  
-        .ToListAsync();
-        
-        var calculatedAims = await aimProgressCalculator.CalculateAimProgress(aims);
-        
+        .Take(input.Limit)
+        .ToList();
+
+        var totalCount = aims
+            .AsEnumerable()
+            .FilterBySources(input.SourceIds)
+            .FilterByClosed(input.ClosedOnly)
+            .Count();
+
         return new PaginatedResult<AimDto>
         {
             Data = calculatedAims,
             Meta = new PaginationMeta
             {
-                TotalCount = aims.Count,
+                TotalCount = totalCount,
                 Limit = input.Limit,
                 Offset = input.Offset
             }
