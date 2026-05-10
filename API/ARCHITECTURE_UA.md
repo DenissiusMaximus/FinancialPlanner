@@ -1,11 +1,11 @@
 # Огляд архітектури
 
-Цей проєкт є багаторівневим ASP.NET Core API з чітким розділенням між контролерами, сервісами, доменною логікою та технічною інфраструктурою.
+Цей проєкт є багаторівневим ASP.NET Core API з чітким розділенням між контролерами, сервісами, доменною логікою та технічною інфраструктурою, що видно в [API/Program.cs](API/Program.cs#L61-L141) і файлах нижче.
 
 ## 1. Структура шарів
 
 ### Шар презентації
-Контролери навмисно зроблені тонкими. Вони лише приймають вхідні дані, викликають сервіс і повертають HTTP-відповідь.
+Контролери навмисно зроблені тонкими. Вони лише приймають вхідні дані, викликають сервіс і повертають HTTP-відповідь, як у [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56), [API/Controllers/UserController.cs](API/Controllers/UserController.cs#L11-L57) та [API/Controllers/TransactionController.cs](API/Controllers/TransactionController.cs#L13-L43).
 
 - [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11)
 - [API/Controllers/UserController.cs](API/Controllers/UserController.cs#L11)
@@ -14,16 +14,16 @@
 Це прибирає HTTP-логіку з бізнес-правил і робить контролери простими для тестування.
 
 ### Шар застосунку
-Більшість бізнес-правил знаходиться в сервісах, а не в контролерах.
+Більшість бізнес-правил знаходиться в сервісах, а не в контролерах, наприклад у [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161), [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L12-L80) та [API/Domain/BalanceManagement/BalanceManagementService.cs](API/Domain/BalanceManagement/BalanceManagementService.cs#L8-L56).
 
 - [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161)
 - [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L12-L80)
 - [API/Domain/BalanceManagement/BalanceManagementService.cs](API/Domain/BalanceManagement/BalanceManagementService.cs#L8-L56)
 
-Шар сервісів координує доступ до бази даних, перевірки, визначення поточного користувача та доменні нотифікації.
+Шар сервісів координує доступ до бази даних, перевірки, визначення поточного користувача та доменні нотифікації, щоб HTTP-рівень залишався мінімальним.
 
 ### Доменний та утилітарний шар
-Повторно використовувані технічні речі винесені в окремі компактні компоненти.
+Повторно використовувані технічні речі винесені в окремі компактні компоненти, такі як [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9), [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) і [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
 
 - контекст поточного користувача: [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9)
 - збереження нотифікацій: [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13)
@@ -34,7 +34,7 @@
 ## 2. Використані патерни
 
 ### Патерн тонкого контролера
-Контролери є маленькими точками прийому і передачі даних. Вони не містять бізнес-правил, роботи з базою даних або крос-секційних аспектів.
+Контролери є маленькими точками прийому і передачі даних. Вони не містять бізнес-правил, роботи з базою даних або крос-секційних аспектів, саме тому [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56) та інші контролери залишаються короткими.
 
 Приклади:
 
@@ -43,7 +43,7 @@
 - [API/Controllers/TransactionController.cs](API/Controllers/TransactionController.cs#L13)
 
 ### Патерн нотифікацій
-У проєкті використовується контекст нотифікацій, щоб збирати кілька доменних помилок без кидання винятків на кожну очікувану проблему валідації.
+У проєкті використовується контекст нотифікацій, щоб збирати кілька доменних помилок без кидання винятків на кожну очікувану проблему валідації. Основні частини — [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) і [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32).
 
 - [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13)
 - [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
@@ -59,7 +59,7 @@
 - код уникає багатьох дрібних загальних винятків для очікуваних доменних помилок
 
 ### Глобальна обробка запитів і відповідей
-Проєкт використовує глобальний обробник винятків для непередбачених помилок і глобальне логування запитів для стабільної телеметрії.
+Проєкт використовує глобальний обробник винятків для непередбачених помилок і глобальне логування запитів для стабільної телеметрії, налаштоване в [API/Program.cs](API/Program.cs#L112-L141) та реалізоване в [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
 
 - [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15)
 - [API/Program.cs](API/Program.cs#L112-L141)
@@ -72,7 +72,7 @@
 4. кожен запит логуються через Serilog request logging
 
 ### Патерн декоратора
-Для окремих сервісів використані декоратори з логуванням.
+Для окремих сервісів використані декоратори з логуванням, зареєстровані в [API/Program.cs](API/Program.cs#L64-L67) і реалізовані в [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) та [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42).
 
 - [API/Program.cs](API/Program.cs#L64-L67)
 - [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27)
@@ -102,10 +102,10 @@ builder.Services.AddScoped<IJwtService>(sp =>
 - базова реалізація: [API/Program.cs](API/Program.cs#L64-L64)
 - обгортка: [API/Program.cs](API/Program.cs#L65-L67)
 
-Це легше читати, простіше розширювати і не дублює код резолву залежностей.
+Це легше читати, простіше розширювати і не дублює код резолву залежностей порівняно з ручним варіантом вище.
 
 ### Singleton
-`PasswordHasher` зареєстрований як singleton, тому що він не має стану і безпечно перевикористовується в межах усього застосунку.
+`PasswordHasher` зареєстрований як singleton, тому що він не має стану і безпечно перевикористовується в межах усього застосунку, як налаштовано в [API/Program.cs](API/Program.cs#L61-L61) і реалізовано в [API/Utils/PasswordHasher/PasswordHasher.cs](API/Utils/PasswordHasher/PasswordHasher.cs#L3-L13).
 
 - [API/Program.cs](API/Program.cs#L61-L61)
 - [API/Utils/PasswordHasher/PasswordHasher.cs](API/Utils/PasswordHasher/PasswordHasher.cs#L3-L13)
@@ -113,7 +113,7 @@ builder.Services.AddScoped<IJwtService>(sp =>
 Це хороший вибір, тому що клас лише виконує хешування і перевірку, не зберігаючи per-request стан.
 
 ### Сhain of responsibility у pipeline
-Запит проходить через впорядкований ланцюг обробників.
+Запит проходить через впорядкований ланцюг обробників у [API/Program.cs](API/Program.cs#L139-L141) та [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32).
 
 Важливі кроки:
 
@@ -130,7 +130,7 @@ builder.Services.AddScoped<IJwtService>(sp =>
 6. виконання action методу
 
 ### Абстракція поточного користувача
-Поточний користувач не читається напряму в контролерах або сервісах. Для цього є окрема абстракція.
+Поточний користувач не читається напряму в контролерах або сервісах. Для цього є окрема абстракція в [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6) та [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9).
 
 - інтерфейс: [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6)
 - реалізація: [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9)
@@ -138,7 +138,7 @@ builder.Services.AddScoped<IJwtService>(sp =>
 Це зменшує кількість прямого доступу до `HttpContext` і тримає логіку отримання ID користувача в одному місці.
 
 ### Допоміжні методи композиції запитів
-Логіка фільтрації і сортування винесена в extension methods замість дублювання в сервісах.
+Логіка фільтрації і сортування винесена в extension methods замість дублювання в сервісах, головним чином у [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60), [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28) та [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18).
 
 - для aim: [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60)
 - для transactions: [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28)
@@ -152,7 +152,7 @@ builder.Services.AddScoped<IJwtService>(sp =>
 - краща читабельність для складних умов сортування і фільтрації
 
 ### Patch-мапінг і оновлення без null
-Операції patch/update використовують повторно використовувану конфігурацію Mapster, яка ігнорує null-значення.
+Операції patch/update використовують повторно використовувану конфігурацію Mapster, яка ігнорує null-значення, визначену в [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14) і застосовану через [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7).
 
 - [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14)
 - [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
@@ -161,7 +161,7 @@ builder.Services.AddScoped<IJwtService>(sp =>
 Це прибирає шаблонний ручний код, де потрібно оновлювати властивості по одній.
 
 ### Шар валідації
-Валідація централізована через FluentValidation та автоматичну model validation.
+Валідація централізована через FluentValidation та автоматичну model validation, підключену в [API/Program.cs](API/Program.cs#L83-L85), а валідатори знаходяться в [API/Validators](API/Validators).
 
 - [API/Program.cs](API/Program.cs#L83-L85)
 - валідатори знаходяться в [API/Validators](API/Validators)
@@ -170,14 +170,14 @@ builder.Services.AddScoped<IJwtService>(sp =>
 
 ## 3. Хороші архітектурні рішення в коді
 
-- Контролери короткі та декларативні.
-- Бізнес-логіка знаходиться в сервісах.
-- Доменні помилки накопичуються через нотифікації.
-- Логування додане через декоратори, а не через копіювання коду.
-- Глобальна обробка винятків захищає API від витоку внутрішніх деталей.
-- Абстракція поточного користувача прибирає повторюваний доступ до `HttpContext`.
-- Логіка запитів композиційно зібрана через extension methods.
-- Patch-мапінг централізований і null-safe.
-- Глобальне логування запитів є стабільним і послідовним.
-- Password hasher є stateless singleton.
+- Контролери короткі та декларативні, наприклад [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56).
+- Бізнес-логіка знаходиться в сервісах, наприклад [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161).
+- Доменні помилки накопичуються через нотифікації в [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13).
+- Логування додане через декоратори, а не через копіювання коду, у [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) та [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42).
+- Глобальна обробка винятків захищає API від витоку внутрішніх деталей у [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
+- Абстракція поточного користувача прибирає повторюваний доступ до `HttpContext` у [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9).
+- Логіка запитів композиційно зібрана через extension methods у [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60).
+- Patch-мапінг централізований і null-safe у [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14).
+- Глобальне логування запитів є стабільним і послідовним завдяки [API/Program.cs](API/Program.cs#L139-L141).
+- Password hasher є stateless singleton у [API/Program.cs](API/Program.cs#L61-L61).
 
