@@ -184,3 +184,33 @@ This keeps input validation separate from business rules and prevents controller
 ## 4. Short conclusion
 
 This codebase is a solid example of practical layered architecture in ASP.NET Core. The strongest parts are the small controllers, notification-based domain feedback, decorator-based logging, centralized user context, and the global request/exception pipeline described above.
+
+## 5. Clean code principles
+
+### KISS
+Keep It Simple, Stupid. The code follows this by keeping controllers small and moving logic into focused services.
+
+- thin controllers: [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56)
+- service logic: [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161)
+- request pipeline setup: [API/Program.cs](API/Program.cs#L61-L141)
+
+### DRY
+Don't Repeat Yourself. Repeated logic is extracted into reusable pieces instead of being copy-pasted.
+
+- notification storage and reporting: [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) and [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
+- query helpers: [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60), [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28), [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18)
+- patch mapping helper: [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
+
+### SOLID
+
+- **S — Single Responsibility Principle**: each class has one main reason to change. Examples: [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) only adds logging around JWT logic, while [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15) only handles unhandled exceptions.
+- **O — Open/Closed Principle**: behavior can be extended without changing existing consumers, for example via [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42) and service decoration in [API/Program.cs](API/Program.cs#L64-L67).
+- **L — Liskov Substitution Principle**: services are consumed through interfaces such as [API/Services/Jwt/IJwtService.cs](API/Services/Jwt/IJwtService.cs) and [API/Services/User/IUserService.cs](API/Services/User/IUserService.cs), so implementations can be swapped without breaking callers.
+- **I — Interface Segregation Principle**: the code uses small focused interfaces like [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6), [API/Utils/PasswordHasher/IPasswordHasher.cs](API/Utils/PasswordHasher/IPasswordHasher.cs#L3-L6), and service interfaces in the Services folder.
+- **D — Dependency Inversion Principle**: high-level code depends on abstractions, not concrete implementations. This is visible in [API/Program.cs](API/Program.cs#L61-L88) and in constructors like [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L12).
+
+### Other useful principles
+
+- **Composition over inheritance**: logic is composed from small services, decorators, and extensions rather than deep class hierarchies.
+- **Separation of concerns**: HTTP handling, validation, domain notifications, logging, and data access are separated across different files.
+- **Fail fast for unexpected errors**: unhandled exceptions are captured by the global handler in [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).

@@ -181,3 +181,33 @@ builder.Services.AddScoped<IJwtService>(sp =>
 - Глобальне логування запитів є стабільним і послідовним завдяки [API/Program.cs](API/Program.cs#L139-L141).
 - Password hasher є stateless singleton у [API/Program.cs](API/Program.cs#L61-L61).
 
+## 5. Принципи чистого коду
+
+### KISS
+Keep It Simple, Stupid. Код дотримується цього принципу через тонкі контролери та винесення логіки у вузькі сервіси.
+
+- тонкі контролери: [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56)
+- логіка сервісу: [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161)
+- налаштування pipeline: [API/Program.cs](API/Program.cs#L61-L141)
+
+### DRY
+Don't Repeat Yourself. Повторювану логіку винесено в повторно використовувані компоненти замість копіювання.
+
+- зберігання та обробка нотифікацій: [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) і [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
+- допоміжні методи для запитів: [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60), [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28), [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18)
+- хелпер для patch-мапінгу: [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
+
+### SOLID
+
+- **S — Single Responsibility Principle**: кожен клас має одну основну причину для змін. Наприклад, [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) додає лише логування навколо JWT-логіки, а [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15) займається тільки глобальними винятками.
+- **O — Open/Closed Principle**: поведінку можна розширювати без зміни споживачів, наприклад через [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42) і декорування в [API/Program.cs](API/Program.cs#L64-L67).
+- **L — Liskov Substitution Principle**: сервіси використовуються через інтерфейси, наприклад [API/Services/Jwt/IJwtService.cs](API/Services/Jwt/IJwtService.cs) і [API/Services/User/IUserService.cs](API/Services/User/IUserService.cs), тому реалізації можна замінювати без поломки викликів.
+- **I — Interface Segregation Principle**: використовуються малі сфокусовані інтерфейси, як [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6), [API/Utils/PasswordHasher/IPasswordHasher.cs](API/Utils/PasswordHasher/IPasswordHasher.cs#L3-L6) і інтерфейси сервісів у папці Services.
+- **D — Dependency Inversion Principle**: високорівневий код залежить від абстракцій, а не від конкретних реалізацій. Це видно в [API/Program.cs](API/Program.cs#L61-L88) і в конструкторах на кшталт [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L12).
+
+### Інші корисні принципи
+
+- **Composition over inheritance**: логіка зібрана з маленьких сервісів, декораторів і extension methods, а не з глибоких ієрархій.
+- **Separation of concerns**: HTTP-логіка, валідація, доменні нотифікації, логування і доступ до даних розділені по різних файлах.
+- **Fail fast для непередбачених помилок**: необроблені винятки ловить глобальний обробник у [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
+
