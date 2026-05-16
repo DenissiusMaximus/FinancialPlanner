@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Target, CheckCircle2, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
-import { DashboardSection } from '../components/DashboardSection';
+import { Target, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -222,7 +221,7 @@ export const Planning: React.FC = () => {
               
               {forecastAims.length > 0 ? (
                 <div className="grid gap-4 grid-cols-1">
-                  {forecastAims.map((aim, index) => (
+                  {forecastAims.map((aim) => (
                     <Card key={aim.id} className="border border-hairline p-5">
                       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
                         <div className="flex-1">

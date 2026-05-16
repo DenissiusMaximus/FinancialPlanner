@@ -1,4 +1,4 @@
-import React, { ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import { ArrowDownToLine, ArrowUpFromLine, RefreshCw, Pencil, HelpCircle } from 'lucide-react';
 import { TransactionTypeEnum } from '../types/enums';
 
@@ -15,7 +15,6 @@ const currencyIcons: Record<string, string> = {
   
   // Other popular
   CNY: '¥',
-  RUB: '₽',
   CAD: '$',
   AUD: '$',
   CHF: '₣',
@@ -90,7 +89,7 @@ export const getTransactionTypeColor = (typeName?: string): string => {
 /**
  * Check if transaction is an expense (for sign in amount)
  */
-export const isExpenseType = (typeName?: string): boolean => {
+export const isExpenseType = (typeName?: string | null): boolean => {
   if (!typeName) return false;
   const key = typeName.toLowerCase();
   return key === TransactionTypeEnum.EXPENSE.toLowerCase() || key === 'витрата';
@@ -99,7 +98,7 @@ export const isExpenseType = (typeName?: string): boolean => {
 /**
  * Check if transaction is an income
  */
-export const isIncomeType = (typeName?: string): boolean => {
+export const isIncomeType = (typeName?: string | null): boolean => {
   if (!typeName) return false;
   const key = typeName.toLowerCase();
   return key === TransactionTypeEnum.INCOME.toLowerCase() || key === 'надходження';

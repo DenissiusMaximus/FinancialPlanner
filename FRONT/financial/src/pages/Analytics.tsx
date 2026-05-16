@@ -1,7 +1,7 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
-import { TrendingUp, TrendingDown, Target, CheckCircle2, AlertCircle, Calendar } from 'lucide-react';
+import { TrendingUp, TrendingDown, CheckCircle2, AlertCircle } from 'lucide-react';
 import { DashboardSection } from '../components/DashboardSection';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
@@ -222,7 +222,7 @@ export const Analytics: React.FC = () => {
                     tickFormatter={(value) => value > 0 ? `${(value/1000).toFixed(0)}k` : '0'}
                   />
                   <RechartsTooltip 
-                    formatter={(value: number) => formatCurrency(value, 2)}
+                    formatter={(value) => formatCurrency(Number(value ?? 0), 2)}
                     contentStyle={{ borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     cursor={{ fill: '#f5f5f7' }}
                   />
@@ -259,12 +259,12 @@ export const Analytics: React.FC = () => {
                       paddingAngle={5}
                       dataKey="value"
                     >
-                      {pieData.map((entry, index) => (
+                      {pieData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
                     </Pie>
                     <RechartsTooltip 
-                      formatter={(value: number) => formatCurrency(value, 2)}
+                      formatter={(value) => formatCurrency(Number(value ?? 0), 2)}
                       contentStyle={{ borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)' }}
                     />
                     <Legend verticalAlign="bottom" height={36} iconType="circle" />
