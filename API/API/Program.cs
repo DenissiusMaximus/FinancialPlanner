@@ -40,11 +40,11 @@ var allowedOrigins = builder.Configuration
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.AllowAnyOrigin() 
+              .AllowAnyHeader() 
+              .AllowAnyMethod();
     });
 });
 
@@ -115,7 +115,7 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
-app.UseCors();
+app.UseCors("AllowAll");
 
 // if (app.Environment.IsDevelopment())
 // {

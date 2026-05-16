@@ -482,3 +482,7 @@ $RECYCLE.BIN/
 
 # Vim temporary swap files
 *.swp
+API/buildandpush.bat
+API/Dockerfile
+API/API/appsettings.json
+API/API/Program.cs
