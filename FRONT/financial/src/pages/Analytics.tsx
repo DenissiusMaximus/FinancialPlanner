@@ -20,8 +20,8 @@ export const Analytics: React.FC = () => {
 
   const transactionsQuery = useGetApiTransaction({
     Limit: 10000,
-    FromDate: new Date(dateFrom).toISOString(),
-    ToDate: new Date(dateTo).toISOString(),
+    FromDate: dateFrom,
+    ToDate: dateTo,
   });
 
   const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
