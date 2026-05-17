@@ -17,6 +17,7 @@ import {
   useGetApiTransactionType,
 } from '../api/generated/endpoints';
 import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { getLocalDatetime } from '../utils/formatters';
 
 export const Transactions: React.FC = () => {
   const queryClient = useQueryClient();
@@ -38,7 +39,7 @@ export const Transactions: React.FC = () => {
     comment: string;
   }>({
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDatetime(),
     sourceId: '',
     transactionTypeId: '',
     categoryId: '',
@@ -113,7 +114,7 @@ export const Transactions: React.FC = () => {
     setCreateErrors({});
     setFormData({
       amount: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDatetime(),
       sourceId: '',
       transactionTypeId: '',
       categoryId: '',
@@ -126,7 +127,7 @@ export const Transactions: React.FC = () => {
     setEditingTransaction(transaction);
     setFormData({
       amount: String(transaction.amount ?? ''),
-      date: transaction.date?.split('T')[0] || '',
+      date: getLocalDatetime(transaction.date),
       sourceId: String(transaction.source?.id ?? ''),
       transactionTypeId: String(transaction.transactionType?.id ?? ''),
       categoryId: String(transaction.category?.id ?? ''),
@@ -158,7 +159,7 @@ export const Transactions: React.FC = () => {
       await createMutation.mutateAsync({
         data: {
           amount: Number(formData.amount),
-          date: formData.date,
+          date: new Date(formData.date).toISOString(),
           sourceId: Number(formData.sourceId),
           transactionTypeId: Number(formData.transactionTypeId),
           categoryId: formData.categoryId ? Number(formData.categoryId) : null,
@@ -167,7 +168,7 @@ export const Transactions: React.FC = () => {
         },
       });
       setIsCreateModalOpen(false);
-      setFormData({ amount: '', date: new Date().toISOString().split('T')[0], sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+      setFormData({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
       setCreateErrors({});
       invalidateTransactions();
     } catch (error: any) {
@@ -189,7 +190,7 @@ export const Transactions: React.FC = () => {
         id: editingTransaction.id,
         data: {
           amount: Number(formData.amount),
-          date: formData.date,
+          date: new Date(formData.date).toISOString(),
           sourceId: Number(formData.sourceId),
           transactionTypeId: Number(formData.transactionTypeId),
           categoryId: formData.categoryId ? Number(formData.categoryId) : null,
@@ -299,7 +300,7 @@ export const Transactions: React.FC = () => {
       <div>
         <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
         <input
-          type="date"
+          type="datetime-local"
           value={formData.date}
           onChange={(e) => {
             setFormData({ ...formData, date: e.target.value });

@@ -6,7 +6,7 @@ public partial class CreatePlannedTransactionInput
 
     public decimal Amount { get; set; }
 
-    public DateOnly StartDate { get; set; }
+    public DateTime StartDate { get; set; }
 
     public int CurrencyId { get; set; }
 

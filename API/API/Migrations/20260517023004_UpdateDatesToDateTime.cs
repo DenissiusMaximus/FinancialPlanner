@@ -6,7 +6,7 @@ using Microsoft.EntityFrameworkCore.Migrations;
 namespace API.Migrations
 {
     /// <inheritdoc />
-    public partial class AddTransactionDateTime : Migration
+    public partial class UpdateDatesToDateTime : Migration
     {
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
@@ -14,6 +14,14 @@ namespace API.Migrations
             migrationBuilder.AlterColumn<DateTime>(
                 name: "Date",
                 table: "Transactions",
+                type: "datetime2",
+                nullable: false,
+                oldClrType: typeof(DateOnly),
+                oldType: "date");
+
+            migrationBuilder.AlterColumn<DateTime>(
+                name: "StartDate",
+                table: "PlannedTransactions",
                 type: "datetime2",
                 nullable: false,
                 oldClrType: typeof(DateOnly),
@@ -26,6 +34,14 @@ namespace API.Migrations
             migrationBuilder.AlterColumn<DateOnly>(
                 name: "Date",
                 table: "Transactions",
+                type: "date",
+                nullable: false,
+                oldClrType: typeof(DateTime),
+                oldType: "datetime2");
+
+            migrationBuilder.AlterColumn<DateOnly>(
+                name: "StartDate",
+                table: "PlannedTransactions",
                 type: "date",
                 nullable: false,
                 oldClrType: typeof(DateTime),

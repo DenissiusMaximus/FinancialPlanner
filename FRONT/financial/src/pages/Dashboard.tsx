@@ -25,6 +25,7 @@ import { AIMS_PREVIEW_COUNT, TRANSACTIONS_PREVIEW_COUNT } from '../utils/constan
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
 import { useUIStore } from '../store/uiStore';
 import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { getLocalDatetime } from '../utils/formatters';
 
 
 export const Dashboard: React.FC = () => {
@@ -44,7 +45,7 @@ export const Dashboard: React.FC = () => {
     comment: string;
   }>({
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDatetime(),
     sourceId: '',
     transactionTypeId: '',
     categoryId: '',
@@ -144,7 +145,7 @@ export const Dashboard: React.FC = () => {
       await createTxMutation.mutateAsync({
         data: {
           amount: Number(txForm.amount),
-          date: txForm.date,
+          date: new Date(txForm.date).toISOString(),
           sourceId: Number(txForm.sourceId),
           transactionTypeId: Number(txForm.transactionTypeId),
           categoryId: txForm.categoryId ? Number(txForm.categoryId) : null,
@@ -153,7 +154,7 @@ export const Dashboard: React.FC = () => {
         },
       });
       setIsCreateTxOpen(false);
-      setTxForm({ amount: '', date: new Date().toISOString().split('T')[0], sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+      setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
       setTxErrors({});
       queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
       queryClient.invalidateQueries({ queryKey: ['/api/Source'] });
@@ -353,7 +354,7 @@ export const Dashboard: React.FC = () => {
               onClick={() => {
                 setTxForm({
                   amount: '',
-                  date: new Date().toISOString().split('T')[0],
+                  date: getLocalDatetime(),
                   sourceId: '',
                   transactionTypeId: '',
                   categoryId: '',
@@ -429,7 +430,7 @@ export const Dashboard: React.FC = () => {
           <div>
             <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
             <input
-              type="date"
+              type="datetime-local"
               value={txForm.date}
               onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
               className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"

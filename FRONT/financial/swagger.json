@@ -2357,7 +2357,7 @@
           },
           "date": {
             "type": "string",
-            "format": "date"
+            "format": "date-time"
           },
           "categoryId": {
             "type": "integer",
