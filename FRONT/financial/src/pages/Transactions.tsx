@@ -356,7 +356,7 @@ export const Transactions: React.FC = () => {
       <DashboardSection
         title="Транзакції"
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             <Button variant="secondary" onClick={clearFilters} type="button">
               Скинути фільтри
             </Button>

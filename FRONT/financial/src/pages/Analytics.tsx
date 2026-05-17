@@ -159,7 +159,7 @@ export const Analytics: React.FC = () => {
         </div>
 
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 mb-8">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
           {/* Income */}
           <Card className="!bg-green-50 border-green-200">
             <div className="flex justify-between items-start mb-2">
@@ -312,9 +312,9 @@ export const Analytics: React.FC = () => {
 
         {/* Stats */}
         <div className="mt-6 bg-[#f5f5f7] rounded-lg p-4 text-sm text-[#7a7a7a]">
-          <div className="flex justify-between">
+          <div className="flex flex-wrap justify-between gap-2">
             <span>Всього транзакцій: {filteredTransactions.length}</span>
-            <span>Період: {dateFrom} - {dateTo}</span>
+            <span>Період: {dateFrom} – {dateTo}</span>
           </div>
         </div>
       </DashboardSection>

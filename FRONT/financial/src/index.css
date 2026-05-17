@@ -23,6 +23,13 @@
 
   input, textarea, select {
     font-family: 'SF Pro Text', system-ui, -apple-system, sans-serif;
+    /* Prevent iOS Safari from auto-zooming on focus (requires >= 16px) */
+    font-size: 16px;
+  }
+
+  /* Fast tap response on all interactive elements */
+  button, a, [role="button"] {
+    touch-action: manipulation;
   }
 }
 
@@ -98,4 +105,11 @@
 html, body, #root {
   width: 100%;
   height: 100%;
+  overflow-x: hidden;
+}
+
+/* Prevent text size adjustment on orientation change (iOS) */
+html {
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
 }

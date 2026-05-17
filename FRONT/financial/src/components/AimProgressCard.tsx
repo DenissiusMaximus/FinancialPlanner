@@ -114,25 +114,51 @@ export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, o
           <h4 className="text-sm font-semibold text-ink flex-1 pr-2 line-clamp-2 leading-snug">
             {aim.name}
           </h4>
-          {showActions && showActionButtons ? (
+          {showActionButtons ? (
             <div className="flex gap-1 shrink-0">
-              {onEdit && (
-                <button
-                  className="text-[#7a7a7a] hover:text-primary transition-colors p-1 rounded hover:bg-primary/5"
-                  onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
-                  title="Редагувати"
-                >
-                  <IconEdit />
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                  onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
-                  title="Видалити"
-                >
-                  <IconTrash />
-                </button>
+              {/* Always visible on mobile */}
+              <div className="flex gap-1 sm:hidden">
+                {onEdit && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-primary transition-colors p-2 rounded touch-manipulation"
+                    onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
+                    title="Редагувати"
+                  >
+                    <IconEdit />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-red-500 transition-colors p-2 rounded touch-manipulation"
+                    onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
+                    title="Видалити"
+                  >
+                    <IconTrash />
+                  </button>
+                )}
+              </div>
+              {/* Hover-visible on desktop */}
+              {showActions && (
+                <div className="hidden sm:flex gap-1">
+                  {onEdit && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-primary transition-colors p-1 rounded hover:bg-primary/5"
+                      onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
+                      title="Редагувати"
+                    >
+                      <IconEdit />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                      onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
+                      title="Видалити"
+                    >
+                      <IconTrash />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : (

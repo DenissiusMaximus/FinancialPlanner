@@ -58,25 +58,51 @@ export const SourceCard: React.FC<SourceCardProps> = ({ source, onEdit, onDelete
             {getCurrencyCode(source.currency?.name)}
           </span>
         </div>
-        {showActions && showActionButtons && (
-          <div className="flex gap-1">
-            {onEdit && (
-              <button
-                className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
-                onClick={() => onEdit(source)}
-                title="Редагувати"
-              >
-                <IconEdit />
-              </button>
-            )}
-            {onDelete && (
-              <button
-                className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                onClick={() => onDelete(source.id)}
-                title="Видалити"
-              >
-                <IconTrash />
-              </button>
+        {showActionButtons && (
+          <div className={`flex gap-1 ${showActions ? 'opacity-100' : 'opacity-0 sm:opacity-0 opacity-100'}`}>
+            {/* Always visible on mobile (touch), hover-visible on desktop */}
+            <div className="flex gap-1 sm:hidden">
+              {onEdit && (
+                <button
+                  className="text-[#7a7a7a] hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/5 touch-manipulation"
+                  onClick={(e) => { e.stopPropagation(); onEdit(source); }}
+                  title="Редагувати"
+                >
+                  <IconEdit />
+                </button>
+              )}
+              {onDelete && (
+                <button
+                  className="text-[#7a7a7a] hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 touch-manipulation"
+                  onClick={(e) => { e.stopPropagation(); onDelete(source.id); }}
+                  title="Видалити"
+                >
+                  <IconTrash />
+                </button>
+              )}
+            </div>
+            {/* Desktop: show on hover */}
+            {showActions && (
+              <div className="hidden sm:flex gap-1">
+                {onEdit && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
+                    onClick={() => onEdit(source)}
+                    title="Редагувати"
+                  >
+                    <IconEdit />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                    onClick={() => onDelete(source.id)}
+                    title="Видалити"
+                  >
+                    <IconTrash />
+                  </button>
+                )}
+              </div>
             )}
           </div>
         )}

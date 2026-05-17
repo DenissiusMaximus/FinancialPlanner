@@ -7,6 +7,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -151,9 +152,14 @@ export const Aims: React.FC = () => {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [editTriggered, setEditTriggered] = useState(false);
 
-  // DnD Sensors
+  // DnD Sensors — Touch-friendly: hold 250ms to start drag (so taps still work)
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 8 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 250, tolerance: 5 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -550,11 +556,11 @@ export const Aims: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-ink">{selectedAim.name}</h2>
                       </div>
 
-                      <div className="flex gap-2 flex-shrink-0">
+                      <div className="flex gap-2 flex-shrink-0 flex-wrap">
                         <Button variant="secondary" onClick={() => handleEditOpen(selectedAim)}>
                           Редагувати
                         </Button>
-                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)}>
+                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)} variant="danger">
                           Видалити
                         </Button>
                       </div>
@@ -704,7 +710,7 @@ export const Aims: React.FC = () => {
                                 e.stopPropagation();
                                 source.id && handleRemoveSource(source.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-primary/60 hover:text-primary ml-1 p-0.5"
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-primary/60 hover:text-primary ml-1 p-1 touch-manipulation"
                               title="Видалити"
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">

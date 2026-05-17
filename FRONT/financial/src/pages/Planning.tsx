@@ -176,22 +176,23 @@ export const Planning: React.FC = () => {
               <span>5 років</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#f0f0f0]">
-              <div>
-                <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Накопичення</div>
-                <div className={`text-2xl font-mono font-bold ${monthlySavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {formatCurrency(monthlySavings * monthsToForecast, 0)} {selectedCurrency}
-                </div>
+            {/* Savings highlight */}
+            <div className="pt-4 border-t border-[#f0f0f0]">
+              <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Накопичення</div>
+              <div className={`text-2xl sm:text-3xl font-mono font-bold ${monthlySavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {formatCurrency(monthlySavings * monthsToForecast, 0)} {selectedCurrency}
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Доходів</div>
-                <div className="text-xl font-mono font-bold text-ink">
+                <div className="text-lg font-mono font-bold text-ink">
                   {formatCurrency(monthlyIncome * monthsToForecast, 0)} {selectedCurrency}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Витрат</div>
-                <div className="text-xl font-mono font-bold text-ink">
+                <div className="text-lg font-mono font-bold text-ink">
                   {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrency}
                 </div>
               </div>
@@ -223,20 +224,20 @@ export const Planning: React.FC = () => {
                 <div className="grid gap-4 grid-cols-1">
                   {forecastAims.map((aim) => (
                     <Card key={aim.id} className="border border-hairline p-5">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                      <div className="flex flex-col gap-3 mb-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-xs font-bold text-[#7a7a7a] bg-[#f5f5f7] px-2 py-0.5 rounded-md">
                               Пріоритет {aim.priority}
                             </span>
-                            <h4 className="text-lg font-semibold text-ink">{aim.name}</h4>
+                            <h4 className="text-base sm:text-lg font-semibold text-ink">{aim.name}</h4>
                           </div>
                           <div className="text-sm text-[#7a7a7a]">
                             Залишилось зібрати: <span className="font-mono font-medium text-ink">{formatCurrency(aim.remainingToCollect, 0)}</span> {selectedCurrency}
                           </div>
                         </div>
                         
-                        <div className="text-right shrink-0">
+                        <div className="self-start">
                           {aim.willAchieveInForecast ? (
                             <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
                               <CheckCircle2 size={16} />

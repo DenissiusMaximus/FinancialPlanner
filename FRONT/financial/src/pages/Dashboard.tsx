@@ -209,7 +209,7 @@ export const Dashboard: React.FC = () => {
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {/* Total Card */}
-            <div className="bg-gradient-to-br from-surface-tile-1 to-ink text-white rounded-2xl p-6 shadow-xl flex flex-col justify-between min-w-[280px] w-[280px] shrink-0 snap-start">
+            <div className="bg-gradient-to-br from-surface-tile-1 to-ink text-white rounded-2xl p-5 shadow-xl flex flex-col justify-between min-w-[240px] w-[240px] sm:min-w-[280px] sm:w-[280px] shrink-0 snap-start">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm font-medium opacity-80">Загальна сума</span>
                 <span className="bg-white/10 text-white border border-white/20 px-2 py-1 rounded text-xs font-semibold">
@@ -227,7 +227,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Source Cards */}
             {sources.map((source) => (
-              <div key={source.id} className="snap-start shrink-0 min-w-[280px] w-[280px] flex items-stretch">
+              <div key={source.id} className="snap-start shrink-0 min-w-[240px] w-[240px] sm:min-w-[280px] sm:w-[280px] flex items-stretch">
                 <div className="w-full h-full" onClick={() => handleOpenCreateTxFromSource(source.id)}>
                   <SourceCard
                     source={source as any}
@@ -279,7 +279,7 @@ export const Dashboard: React.FC = () => {
         action={<Button onClick={() => navigate('/aims')}>Відкрити цілі</Button>}
       >
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {aims.slice(0, AIMS_PREVIEW_COUNT).map((aim) => (
               <div
                 key={aim.id}
@@ -293,19 +293,21 @@ export const Dashboard: React.FC = () => {
 
           {/* Total Progress */}
           {aims.length > 0 && (
-            <div className="bg-white border border-hairline rounded-lg p-5 flex items-center gap-4">
-              <span className="text-sm font-semibold text-ink min-w-[180px]">
+            <div className="bg-white border border-hairline rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <span className="text-sm font-semibold text-ink sm:min-w-[180px]">
                 Загальний прогрес по всім цілям
               </span>
-              <div className="flex-1 h-1.5 bg-hairline rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-primary-focus transition-all duration-300"
-                  style={{ width: `${Math.min(totalAimsProgress, 100)}%` }}
-                />
+              <div className="flex-1 flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-hairline rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-primary-focus transition-all duration-300"
+                    style={{ width: `${Math.min(totalAimsProgress, 100)}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-primary shrink-0">
+                  {totalAimsProgress.toFixed(1)}%
+                </span>
               </div>
-              <span className="text-sm font-semibold text-primary min-w-[50px] text-right">
-                {totalAimsProgress.toFixed(1)}%
-              </span>
             </div>
           )}
 
