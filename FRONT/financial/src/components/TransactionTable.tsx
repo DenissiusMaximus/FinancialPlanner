@@ -91,8 +91,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                     {isExpense ? '-' : '+'}{transaction.amount.toFixed(2)}{' '}
                     <span className="text-xs font-normal">{getCurrencyDisplay(transaction.currency?.name)}</span>
                   </span>
-                  <span className="text-xs text-[#7a7a7a] font-mono shrink-0">
-                    {new Date(transaction.date).toLocaleDateString('uk-UA')}
+                  <span className="text-xs text-[#7a7a7a] font-mono shrink-0 whitespace-nowrap">
+                    {new Date(transaction.date).toLocaleString('uk-UA', { 
+                      year: 'numeric', month: '2-digit', day: '2-digit',
+                      hour: '2-digit', minute: '2-digit'
+                    })}
                   </span>
                 </div>
                 <div className="flex items-center gap-2 flex-wrap">
@@ -160,8 +163,11 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
           <tbody>
             {transactions.map((transaction) => (
               <tr key={transaction.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
-                <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs">
-                  {new Date(transaction.date).toLocaleDateString('uk-UA')}
+                <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs whitespace-nowrap">
+                  {new Date(transaction.date).toLocaleString('uk-UA', { 
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit'
+                  })}
                 </td>
                 <td className="px-4 py-3 text-ink">{transaction.category?.name || '—'}</td>
                 <td className="px-4 py-3">
