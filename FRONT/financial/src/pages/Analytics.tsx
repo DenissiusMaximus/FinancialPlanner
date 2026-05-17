@@ -1,16 +1,12 @@
 import React, { useState, useMemo } from 'react';
-import { PieChart, Pie, Cell, Tooltip as RechartsTooltip, Legend, ResponsiveContainer, BarChart, Bar, XAxis, YAxis, CartesianGrid } from 'recharts';
 import { TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react';
 import { DashboardSection } from '../components/DashboardSection';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
-import { EmptyState } from '../components/EmptyState';
 import { useGetApiTransaction } from '../api/generated/endpoints';
 import { formatCurrency } from '../utils/formatters';
 import { isIncomeType, isExpenseType } from '../utils/display-helpers';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
-
-const COLORS = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#FFA07A', '#98D8C8', '#F7DC6F', '#BB8FCE', '#F1948A'];
 
 export const Analytics: React.FC = () => {
   const [dateFrom, setDateFrom] = useState<string>(() => {
@@ -43,44 +39,44 @@ export const Analytics: React.FC = () => {
   const isLoading = transactionsQuery.isLoading;
   const isRefetching = transactionsQuery.isFetching && !isLoading;
 
-  const stats = useMemo(() => {
-    let income = 0;
-    let expense = 0;
-    const byCategory: Record<string, number> = {};
-    const timelineMap: Record<string, { income: number; expense: number }> = {};
+  const categoryStats = useMemo(() => {
+    let totalIncome = 0;
+    let totalExpense = 0;
+    const stats: Record<string, { name: string; income: number; expense: number; net: number }> = {};
 
     transactions.forEach((t: any) => {
       const typeName = t.transactionType?.name;
       const amount = convert(t.amount || 0, t.currency);
       const categoryName = t.category?.name || 'Без категорії';
-      const dateStr = t.date
-        ? new Date(t.date).toLocaleDateString('uk-UA', { day: 'numeric', month: 'short' })
-        : 'Unknown';
 
-      if (!timelineMap[dateStr]) timelineMap[dateStr] = { income: 0, expense: 0 };
+      if (!stats[categoryName]) {
+        stats[categoryName] = { name: categoryName, income: 0, expense: 0, net: 0 };
+      }
 
       if (isIncomeType(typeName)) {
-        income += amount;
-        timelineMap[dateStr].income += amount;
+        stats[categoryName].income += amount;
+        stats[categoryName].net += amount;
+        totalIncome += amount;
       } else if (isExpenseType(typeName)) {
-        expense += amount;
-        timelineMap[dateStr].expense += amount;
-        byCategory[categoryName] = (byCategory[categoryName] || 0) + amount;
+        stats[categoryName].expense += amount;
+        stats[categoryName].net -= amount;
+        totalExpense += amount;
       }
     });
 
-    const timeline = Object.entries(timelineMap).map(([date, data]) => ({ date, ...data }));
-    return { income, expense, byCategory, timeline };
+    const categoriesArray = Object.values(stats).sort((a, b) => b.name.localeCompare(a.name));
+
+    return {
+      categories: categoriesArray,
+      total: {
+        income: totalIncome,
+        expense: totalExpense,
+        net: totalIncome - totalExpense
+      }
+    };
   }, [transactions, convert, selectedCurrencyName]);
 
-  const pieData = useMemo(() =>
-    Object.entries(stats.byCategory)
-      .map(([name, value]) => ({ name, value }))
-      .sort((a, b) => b.value - a.value),
-    [stats.byCategory]
-  );
-
-  const net = stats.income - stats.expense;
+  const net = categoryStats.total.net;
 
   if (isLoading) {
     return (
@@ -143,7 +139,7 @@ export const Analytics: React.FC = () => {
               <TrendingUp size={20} className="text-green-500" />
             </div>
             <div className="text-2xl font-bold text-green-600 font-mono">
-              {formatCurrency(stats.income, 2)}
+              {formatCurrency(categoryStats.total.income, 2)}
             </div>
             <div className="text-xs text-green-700/70 mt-1">{selectedCurrencyName}</div>
           </Card>
@@ -154,7 +150,7 @@ export const Analytics: React.FC = () => {
               <TrendingDown size={20} className="text-red-500" />
             </div>
             <div className="text-2xl font-bold text-red-600 font-mono">
-              {formatCurrency(stats.expense, 2)}
+              {formatCurrency(categoryStats.total.expense, 2)}
             </div>
             <div className="text-xs text-red-700/70 mt-1">{selectedCurrencyName}</div>
           </Card>
@@ -171,108 +167,63 @@ export const Analytics: React.FC = () => {
           </Card>
         </div>
 
-        {/* Bar chart: income vs expense timeline */}
-        {stats.timeline.length > 0 ? (
-          <Card className="flex flex-col" style={{ height: 280 }}>
-            <h3 className="text-sm font-semibold text-ink mb-3">Динаміка по днях</h3>
-            <div className="flex-1 min-h-0 w-full">
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stats.timeline} margin={{ top: 4, right: 4, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f0f0f0" />
-                  <XAxis
-                    dataKey="date"
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#7a7a7a', fontSize: 11 }}
-                    dy={8}
-                    interval="preserveStartEnd"
-                  />
-                  <YAxis
-                    axisLine={false}
-                    tickLine={false}
-                    tick={{ fill: '#7a7a7a', fontSize: 11 }}
-                    tickFormatter={(v) => v > 0 ? `${(v / 1000).toFixed(0)}k` : '0'}
-                  />
-                  <RechartsTooltip
-                    formatter={(value) => [`${formatCurrency(Number(value ?? 0), 2)} ${selectedCurrencyName}`, '']}
-                    contentStyle={{ borderRadius: '12px', border: '1px solid #f0f0f0', boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', fontSize: 12 }}
-                    cursor={{ fill: '#f5f5f7' }}
-                  />
-                  <Legend verticalAlign="top" height={28} iconType="circle" wrapperStyle={{ fontSize: 12 }} />
-                  <Bar dataKey="income" name="Дохід" fill="#34c759" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                  <Bar dataKey="expense" name="Витрати" fill="#ff3b30" radius={[4, 4, 0, 0]} maxBarSize={32} />
-                </BarChart>
-              </ResponsiveContainer>
-            </div>
-          </Card>
-        ) : (
-          <EmptyState title="Немає транзакцій" description="За вказаний період не знайдено транзакцій." />
-        )}
-
-        {/* Category breakdown */}
-        {pieData.length > 0 && (
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            <Card className="flex flex-col" style={{ height: 320 }}>
-              <h3 className="text-sm font-semibold text-ink mb-2">Структура витрат</h3>
-              <div className="flex-1 min-h-0 w-full">
-                <ResponsiveContainer width="100%" height="100%">
-                  <PieChart>
-                    <Pie
-                      data={pieData}
-                      cx="50%"
-                      cy="45%"
-                      innerRadius={55}
-                      outerRadius={90}
-                      paddingAngle={4}
-                      dataKey="value"
-                    >
-                      {pieData.map((_, index) => (
-                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                      ))}
-                    </Pie>
-                    <RechartsTooltip
-                      formatter={(value) => [`${formatCurrency(Number(value ?? 0), 2)} ${selectedCurrencyName}`, '']}
-                      contentStyle={{ borderRadius: '12px', border: '1px solid #f0f0f0', fontSize: 12 }}
-                    />
-                    <Legend verticalAlign="bottom" height={32} iconType="circle" wrapperStyle={{ fontSize: 11 }} />
-                  </PieChart>
-                </ResponsiveContainer>
-              </div>
-            </Card>
-
-            <Card>
-              <h3 className="text-sm font-semibold text-ink mb-3">Деталізація витрат</h3>
-              <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                {pieData.map((item, index) => {
-                  const pct = stats.expense > 0 ? (item.value / stats.expense) * 100 : 0;
-                  return (
-                    <div key={item.name}>
-                      <div className="flex items-center justify-between mb-0.5">
-                        <div className="flex items-center gap-2 min-w-0">
-                          <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: COLORS[index % COLORS.length] }} />
-                          <span className="text-xs text-[#7a7a7a] truncate">{item.name}</span>
-                        </div>
-                        <span className="font-mono text-xs font-semibold text-ink ml-2 shrink-0">
-                          {formatCurrency(item.value, 2)}
+        {/* Category Table */}
+        <Card className="p-0 overflow-hidden mt-8">
+          <div className="overflow-x-auto">
+            <table className="w-full text-sm text-left">
+              <thead className="text-xs text-[#7a7a7a] uppercase bg-[#f5f5f7] border-b border-hairline">
+                <tr>
+                  <th className="px-4 py-3 font-semibold tracking-wider">Категорія</th>
+                  <th className="px-4 py-3 text-right font-semibold tracking-wider">Доходи</th>
+                  <th className="px-4 py-3 text-right font-semibold tracking-wider">Витрати</th>
+                  <th className="px-4 py-3 text-right font-semibold tracking-wider">Разом</th>
+                </tr>
+              </thead>
+              <tbody>
+                {categoryStats.categories.length > 0 ? (
+                  categoryStats.categories.map((cat) => (
+                    <tr key={cat.name} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
+                      <td className="px-4 py-3 font-medium text-ink">{cat.name}</td>
+                      <td className="px-4 py-3 text-right text-green-600 font-mono">
+                        {cat.income > 0 ? formatCurrency(cat.income, 2) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right text-red-500 font-mono">
+                        {cat.expense > 0 ? formatCurrency(cat.expense, 2) : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-right font-mono font-semibold">
+                        <span className={cat.net > 0 ? 'text-green-600' : cat.net < 0 ? 'text-red-500' : 'text-ink'}>
+                          {cat.net > 0 ? '+' : ''}{formatCurrency(cat.net, 2)}
                         </span>
-                      </div>
-                      <div className="h-1 bg-[#f0f0f0] rounded-full overflow-hidden">
-                        <div
-                          className="h-full rounded-full transition-all"
-                          style={{ width: `${pct}%`, backgroundColor: COLORS[index % COLORS.length] }}
-                        />
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-              <div className="mt-3 pt-3 border-t border-hairline flex justify-between text-xs">
-                <span className="text-[#7a7a7a]">Всього витрат</span>
-                <span className="font-mono font-bold text-red-500">{formatCurrency(stats.expense, 2)} {selectedCurrencyName}</span>
-              </div>
-            </Card>
+                      </td>
+                    </tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan={4} className="px-4 py-8 text-center text-[#7a7a7a]">
+                      Немає транзакцій за цей період
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+              <tfoot className="bg-[#f5f5f7] font-bold border-t-2 border-hairline">
+                <tr>
+                  <td className="px-4 py-3 text-ink">Всі разом</td>
+                  <td className="px-4 py-3 text-right text-green-600 font-mono">
+                    {formatCurrency(categoryStats.total.income, 2)}
+                  </td>
+                  <td className="px-4 py-3 text-right text-red-500 font-mono">
+                    {formatCurrency(categoryStats.total.expense, 2)}
+                  </td>
+                  <td className="px-4 py-3 text-right font-mono">
+                    <span className={categoryStats.total.net > 0 ? 'text-green-600' : categoryStats.total.net < 0 ? 'text-red-500' : 'text-ink'}>
+                      {categoryStats.total.net > 0 ? '+' : ''}{formatCurrency(categoryStats.total.net, 2)}
+                    </span>
+                  </td>
+                </tr>
+              </tfoot>
+            </table>
           </div>
-        )}
+        </Card>
       </DashboardSection>
     </div>
   );

@@ -94,7 +94,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                   <span className="text-xs text-[#7a7a7a] font-mono shrink-0 whitespace-nowrap">
                     {new Date(transaction.date).toLocaleString('uk-UA', { 
                       year: 'numeric', month: '2-digit', day: '2-digit',
-                      hour: '2-digit', minute: '2-digit'
+                      hour: '2-digit', minute: '2-digit', second: '2-digit'
                     })}
                   </span>
                 </div>
@@ -166,7 +166,7 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
                 <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs whitespace-nowrap">
                   {new Date(transaction.date).toLocaleString('uk-UA', { 
                     year: 'numeric', month: '2-digit', day: '2-digit',
-                    hour: '2-digit', minute: '2-digit'
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
                   })}
                 </td>
                 <td className="px-4 py-3 text-ink">{transaction.category?.name || '—'}</td>

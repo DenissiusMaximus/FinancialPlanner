@@ -145,7 +145,7 @@ export const Dashboard: React.FC = () => {
       await createTxMutation.mutateAsync({
         data: {
           amount: Number(txForm.amount),
-          date: new Date(txForm.date).toISOString(),
+          date: txForm.date,
           sourceId: Number(txForm.sourceId),
           transactionTypeId: Number(txForm.transactionTypeId),
           categoryId: txForm.categoryId ? Number(txForm.categoryId) : null,
@@ -431,6 +431,7 @@ export const Dashboard: React.FC = () => {
             <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
             <input
               type="datetime-local"
+              step="1"
               value={txForm.date}
               onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
               className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"

@@ -159,7 +159,7 @@ export const Transactions: React.FC = () => {
       await createMutation.mutateAsync({
         data: {
           amount: Number(formData.amount),
-          date: new Date(formData.date).toISOString(),
+          date: formData.date,
           sourceId: Number(formData.sourceId),
           transactionTypeId: Number(formData.transactionTypeId),
           categoryId: formData.categoryId ? Number(formData.categoryId) : null,
@@ -190,7 +190,7 @@ export const Transactions: React.FC = () => {
         id: editingTransaction.id,
         data: {
           amount: Number(formData.amount),
-          date: new Date(formData.date).toISOString(),
+          date: formData.date,
           sourceId: Number(formData.sourceId),
           transactionTypeId: Number(formData.transactionTypeId),
           categoryId: formData.categoryId ? Number(formData.categoryId) : null,
@@ -301,6 +301,7 @@ export const Transactions: React.FC = () => {
         <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
         <input
           type="datetime-local"
+          step="1"
           value={formData.date}
           onChange={(e) => {
             setFormData({ ...formData, date: e.target.value });
