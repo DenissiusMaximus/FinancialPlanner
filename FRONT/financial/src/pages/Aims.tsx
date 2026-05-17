@@ -152,13 +152,13 @@ export const Aims: React.FC = () => {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [editTriggered, setEditTriggered] = useState(false);
 
-  // DnD Sensors — Touch-friendly: hold 250ms to start drag (so taps still work)
+  // DnD Sensors — separate pointer (mouse/trackpad) from touch to avoid conflicts
   const sensors = useSensors(
     useSensor(PointerSensor, {
-      activationConstraint: { distance: 8 },
+      activationConstraint: { distance: 5 },
     }),
     useSensor(TouchSensor, {
-      activationConstraint: { delay: 250, tolerance: 5 },
+      activationConstraint: { delay: 200, tolerance: 8 },
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );

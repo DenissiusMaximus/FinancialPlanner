@@ -65,16 +65,35 @@ export const Transactions: React.FC = () => {
   const updateMutation = usePatchApiTransactionId();
   const deleteMutation = useDeleteApiTransactionId();
 
-  const transactions = (Array.isArray(transactionsQuery.data?.data)
+  const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
     ? transactionsQuery.data!.data
     : Array.isArray(transactionsQuery.data)
     ? transactionsQuery.data
     : []) as any[];
+
+  // Client-side filter by type (backend may not support it reliably)
+  const transactions = rawTransactions
+    .filter((t: any) =>
+      !filters.TransactionTypeId ||
+      Number(t.transactionType?.id) === Number(filters.TransactionTypeId)
+    )
+    // Client-side sort by full datetime
+    .sort((a: any, b: any) => {
+      if (filters.SortBy === 'Amount') {
+        return filters.SortDescending
+          ? (b.amount ?? 0) - (a.amount ?? 0)
+          : (a.amount ?? 0) - (b.amount ?? 0);
+      }
+      const da = new Date(a.date ?? 0).getTime();
+      const db = new Date(b.date ?? 0).getTime();
+      return filters.SortDescending ? db - da : da - db;
+    });
   const categories = (Array.isArray(categoriesQuery.data) ? categoriesQuery.data : []) as any[];
   const sources = (Array.isArray(sourcesQuery.data) ? sourcesQuery.data : []) as any[];
   const types = (Array.isArray(typesQuery.data) ? typesQuery.data : []) as any[];
 
   const isLoading = transactionsQuery.isLoading || categoriesQuery.isLoading || sourcesQuery.isLoading || typesQuery.isLoading;
+  const isFiltering = transactionsQuery.isFetching && !transactionsQuery.isLoading;
 
   const invalidateTransactions = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
