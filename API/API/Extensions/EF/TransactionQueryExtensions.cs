@@ -17,10 +17,10 @@ public static class TransactionQueryExtensions
         DateOnly? fromDate, DateOnly? toDate)
     {
         if (fromDate != null)
-            query = query.Where(t => t.Date >= fromDate);
+            query = query.Where(t => t.Date >= fromDate.Value.ToDateTime(TimeOnly.MinValue));
 
         if (toDate != null)
-            query = query.Where(t => t.Date <= toDate);
+            query = query.Where(t => t.Date <= toDate.Value.ToDateTime(TimeOnly.MaxValue));
 
         return query;
     }

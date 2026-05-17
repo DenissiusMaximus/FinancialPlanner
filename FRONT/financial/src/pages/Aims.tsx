@@ -556,11 +556,11 @@ export const Aims: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-ink">{selectedAim.name}</h2>
                       </div>
 
-                      <div className="flex gap-2 flex-shrink-0 flex-wrap">
-                        <Button variant="secondary" onClick={() => handleEditOpen(selectedAim)}>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <Button variant="secondary" size="sm" onClick={() => handleEditOpen(selectedAim)}>
                           Редагувати
                         </Button>
-                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)} variant="danger">
+                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)} variant="danger" size="sm">
                           Видалити
                         </Button>
                       </div>

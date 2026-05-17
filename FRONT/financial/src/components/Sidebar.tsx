@@ -204,7 +204,7 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* ── Mobile top bar ── */}
-      <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white border-b border-[#f0f0f0] px-4 py-3 shadow-sm">
+      <div className="lg:hidden sticky top-0 z-50 flex items-center gap-2 bg-white border-b border-[#f0f0f0] px-4 py-3 shadow-sm">
         <button
           className="flex items-center gap-2 flex-1 min-w-0 touch-manipulation"
           onClick={() => navigate('/')}
@@ -217,6 +217,18 @@ export const Sidebar: React.FC = () => {
           </div>
           <span className="font-display font-semibold text-ink text-sm truncate">FinPlanner</span>
         </button>
+        {/* Currency selector */}
+        <select
+          value={selectedCurrency ?? ''}
+          onChange={(e) => setSelectedCurrency(e.target.value)}
+          className="text-xs font-semibold text-primary bg-primary/8 border border-primary/20 rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary touch-manipulation shrink-0"
+          aria-label="Валюта"
+          style={{ fontSize: 14 }}
+        >
+          {currencies.map((c: any) => (
+            <option key={c.id} value={c.name}>{c.name}</option>
+          ))}
+        </select>
         <button
           className="p-1.5 rounded-lg text-[#7a7a7a] hover:text-ink hover:bg-[#f5f5f7] transition-colors touch-manipulation"
           onClick={() => setMobileOpen(true)}

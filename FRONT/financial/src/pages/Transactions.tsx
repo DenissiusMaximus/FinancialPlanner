@@ -390,20 +390,33 @@ export const Transactions: React.FC = () => {
           onClearFilters={clearFilters}
         />
 
-        {/* Table */}
-        {transactions.length > 0 ? (
-          <TransactionTable
-            transactions={transactions as any}
-            onEdit={handleEditOpen}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <EmptyState
-            title="Немає транзакцій"
-            description="Поки що тут порожньо. Додайте першу транзакцію, щоб отримати аналітику по доходах і витратах."
-            action={<Button onClick={handleCreateOpen}>+ Нова транзакція</Button>}
-          />
-        )}
+        {/* Table with loading overlay */}
+        <div className="relative">
+          {isFiltering && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-xl">
+              <div className="flex items-center gap-2 text-sm text-primary font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-primary/20">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+                </svg>
+                Фільтрується...
+              </div>
+            </div>
+          )}
+          {transactions.length > 0 ? (
+            <TransactionTable
+              transactions={transactions as any}
+              onEdit={handleEditOpen}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EmptyState
+              title="Немає транзакцій"
+              description="Поки що тут порожньо. Додайте першу транзакцію, щоб отримати аналітику по доходах і витратах."
+              action={<Button onClick={handleCreateOpen}>+ Нова транзакція</Button>}
+            />
+          )}
+        </div>
 
         {transactions.length > 0 && (
           <p className="text-xs text-[#7a7a7a] mt-4">

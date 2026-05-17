@@ -86,19 +86,20 @@ export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, o
       ref={setNodeRef}
       style={style}
       className={`flex gap-3 ${isDragging ? 'opacity-50' : ''}`}
+      data-sortable-item
       {...attributes}
     >
       {/* Left Section: Priority + Drag Handle */}
       <div
-        className="flex flex-col items-center gap-1.5 pt-2 flex-shrink-0"
+        className="flex flex-col items-center gap-1.5 pt-2 flex-shrink-0 touch-none"
         {...listeners}
       >
         {/* Priority Badge */}
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20">
           <span className="text-xs font-bold text-primary">{aim.priority}</span>
         </div>
-        {/* Drag Handle */}
-        <div className="cursor-grab active:cursor-grabbing text-primary/40 hover:text-primary/60 transition-colors">
+        {/* Drag Handle — enlarged touch target for mobile */}
+        <div className="cursor-grab active:cursor-grabbing text-primary/40 hover:text-primary/60 transition-colors p-2 -m-2">
           <IconDragHandle />
         </div>
       </div>

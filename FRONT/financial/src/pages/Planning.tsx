@@ -67,7 +67,7 @@ export const Planning: React.FC = () => {
       monthlySavings: inc - exp,
       expenseByCategory: catMap
     };
-  }, [planned]);
+  }, [planned, convert, selectedCurrencyName]);
 
   // 2. Waterfall Forecast Logic
   const forecastAims = useMemo(() => {
@@ -120,7 +120,7 @@ export const Planning: React.FC = () => {
         newProgressPercentage: Math.min(((collected + forecastedAdditionalCollection) / target) * 100, 100)
       };
     });
-  }, [aims, monthlySavings, monthsToForecast]);
+  }, [aims, monthlySavings, monthsToForecast, convert, selectedCurrencyName]);
 
   const targetDate = useMemo(() => {
     const d = new Date();
