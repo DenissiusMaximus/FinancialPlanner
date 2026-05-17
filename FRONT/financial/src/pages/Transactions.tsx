@@ -67,6 +67,8 @@ export const Transactions: React.FC = () => {
 
   const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
     ? transactionsQuery.data!.data
+    : Array.isArray((transactionsQuery.data as any)?.items)
+    ? (transactionsQuery.data as any).items
     : Array.isArray(transactionsQuery.data)
     ? transactionsQuery.data
     : []) as any[];

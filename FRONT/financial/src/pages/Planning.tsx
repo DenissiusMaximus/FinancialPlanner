@@ -28,7 +28,11 @@ export const Planning: React.FC = () => {
   const aims = (Array.isArray(aimsRaw?.data) ? aimsRaw.data : Array.isArray(aimsRaw) ? aimsRaw : []) as AimDto[];
   
   const plannedRaw = plannedQuery.data as any;
-  const planned = (Array.isArray(plannedRaw?.data) ? plannedRaw.data : Array.isArray(plannedRaw) ? plannedRaw : []) as PlannedTransactionDto[];
+  const planned = (
+    Array.isArray(plannedRaw?.data) ? plannedRaw.data :
+    Array.isArray(plannedRaw?.items) ? plannedRaw.items :
+    Array.isArray(plannedRaw) ? plannedRaw : []
+  ) as PlannedTransactionDto[];
 
   // 1. Calculate Expected Monthly Savings Rate & Category Expenses
   const { monthlyIncome, monthlyExpense, monthlySavings, expenseByCategory } = useMemo(() => {

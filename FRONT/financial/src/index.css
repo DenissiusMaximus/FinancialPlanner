@@ -114,11 +114,10 @@ html, body, #root {
   -webkit-user-select: none !important;
 }
 
-/* DnD sortable items — no text selection, better touch */
+/* DnD sortable items — no text selection */
 [data-sortable-item] {
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
 }
 
 /* Prevent text size adjustment on orientation change (iOS) */

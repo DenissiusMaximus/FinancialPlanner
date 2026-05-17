@@ -286,7 +286,7 @@ export const Dashboard: React.FC = () => {
                 className="cursor-pointer"
                 onClick={() => navigate(`/aims?editId=${aim.id}`)}
               >
-                <AimProgressCard aim={aim} />
+                <AimProgressCard aim={aim as any} isDraggable={false} />
               </div>
             ))}
           </div>
@@ -320,7 +320,7 @@ export const Dashboard: React.FC = () => {
                   className="cursor-pointer"
                   onClick={() => navigate(`/aims?editId=${aim.id}`)}
                 >
-                  <AimProgressCard aim={aim} />
+                  <AimProgressCard aim={aim} isDraggable={false} />
                 </div>
               ))}
             </div>

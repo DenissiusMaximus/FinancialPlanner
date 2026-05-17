@@ -445,21 +445,42 @@ export const Aims: React.FC = () => {
         }
       }
 
-      // Execute all updates
-      for (const update of updatesToExecute) {
-        const aimToUpdate = sortedAims.find((a) => a.id === update.id);
-        if (aimToUpdate) {
-          await updateMutation.mutateAsync({
-            id: aimToUpdate.id,
-            data: {
-              name: aimToUpdate.name,
-              amount: Number(aimToUpdate.amount),
-              priority: update.newPrio,
-              currencyId: Number(aimToUpdate.currency?.id),
-            },
-          });
-        }
-      }
+      // OPTIMISTIC UPDATE: Update React Query cache immediately
+      queryClient.setQueryData(['/api/Aim'], (oldData: any) => {
+        if (!oldData) return oldData;
+        const items = Array.isArray(oldData?.data) ? oldData.data : Array.isArray(oldData?.items) ? oldData.items : Array.isArray(oldData) ? oldData : [];
+        
+        const newItems = items.map((aim: any) => {
+          const update = updatesToExecute.find((u) => u.id === aim.id);
+          if (update) {
+            return { ...aim, priority: update.newPrio };
+          }
+          return aim;
+        });
+        
+        if (Array.isArray(oldData?.data)) return { ...oldData, data: newItems };
+        if (Array.isArray(oldData?.items)) return { ...oldData, items: newItems };
+        if (Array.isArray(oldData)) return newItems;
+        return oldData;
+      });
+
+      // Execute all updates in parallel
+      await Promise.all(
+        updatesToExecute.map(async (update) => {
+          const aimToUpdate = sortedAims.find((a) => a.id === update.id);
+          if (aimToUpdate) {
+            await updateMutation.mutateAsync({
+              id: aimToUpdate.id,
+              data: {
+                name: aimToUpdate.name,
+                amount: Number(aimToUpdate.amount),
+                priority: update.newPrio,
+                currencyId: Number(aimToUpdate.currency?.id),
+              },
+            });
+          }
+        })
+      );
 
       invalidateAims();
     } catch (error) {
