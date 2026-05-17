@@ -16,6 +16,7 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { AimProgressCard } from '../components/AimProgressCard';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { SourceSelectionModal } from '../components/SourceSelectionModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -144,6 +145,7 @@ export const Aims: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSourceSelectionModalOpen, setIsSourceSelectionModalOpen] = useState(false);
   const [isEditingView, setIsEditingView] = useState(false);
+  const [aimToDelete, setAimToDelete] = useState<number | null>(null);
   const [selectedAimId, setSelectedAimId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AimFormState>(EMPTY_FORM);
   const [createErrors, setCreateErrors] = useState<AimErrorState>({});
@@ -334,15 +336,21 @@ export const Aims: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Ви впевнені, що хочете видалити цю ціль?')) return;
+  const handleDelete = (id: number) => {
+    setAimToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!aimToDelete) return;
     try {
-      await deleteMutation.mutateAsync({ id });
-      if (selectedAimId === id) setSelectedAimId(null);
+      await deleteMutation.mutateAsync({ id: aimToDelete });
+      if (selectedAimId === aimToDelete) setSelectedAimId(null);
       setPageError(null);
       invalidateAims();
     } catch (error) {
       setPageError(getErrorMessage(error));
+    } finally {
+      setAimToDelete(null);
     }
   };
 
@@ -792,6 +800,14 @@ export const Aims: React.FC = () => {
         linkedSourceIds={linkedSourceIds}
         onConfirm={handleAddSources}
         isLoading={addSourceMutation.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={aimToDelete !== null}
+        title="Видалення цілі"
+        message="Ви впевнені, що хочете видалити цю ціль?"
+        onConfirm={confirmDelete}
+        onCancel={() => setAimToDelete(null)}
       />
     </div>
   );

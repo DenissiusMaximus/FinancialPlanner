@@ -169,7 +169,59 @@ export const Analytics: React.FC = () => {
 
         {/* Category Table */}
         <Card className="p-0 overflow-hidden mt-8">
-          <div className="overflow-x-auto">
+          {/* Mobile View */}
+          <div className="sm:hidden divide-y divide-[#f0f0f0]">
+            {categoryStats.categories.length > 0 ? (
+              categoryStats.categories.map((cat) => (
+                <div key={cat.name} className="p-4 flex flex-col gap-2">
+                  <div className="flex justify-between items-center">
+                    <span className="font-medium text-ink">{cat.name}</span>
+                    <span className={`font-mono font-bold ${cat.net > 0 ? 'text-green-600' : cat.net < 0 ? 'text-red-500' : 'text-ink'}`}>
+                      {cat.net > 0 ? '+' : ''}{formatCurrency(cat.net, 2)}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs">
+                    <div className="flex gap-1.5 items-center">
+                      <TrendingUp size={14} className="text-green-500" />
+                      <span className="text-green-600 font-mono">{cat.income > 0 ? formatCurrency(cat.income, 2) : '—'}</span>
+                    </div>
+                    <div className="flex gap-1.5 items-center">
+                      <TrendingDown size={14} className="text-red-500" />
+                      <span className="text-red-500 font-mono">{cat.expense > 0 ? formatCurrency(cat.expense, 2) : '—'}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="p-8 text-center text-[#7a7a7a] text-sm">
+                Немає транзакцій за цей період
+              </div>
+            )}
+            {/* Mobile Footer */}
+            {categoryStats.categories.length > 0 && (
+              <div className="p-4 bg-[#f5f5f7] flex flex-col gap-2 border-t-2 border-hairline">
+                <div className="flex justify-between items-center font-bold">
+                  <span className="text-ink text-sm">Всі разом</span>
+                  <span className={`font-mono text-sm ${categoryStats.total.net > 0 ? 'text-green-600' : categoryStats.total.net < 0 ? 'text-red-500' : 'text-ink'}`}>
+                    {categoryStats.total.net > 0 ? '+' : ''}{formatCurrency(categoryStats.total.net, 2)}
+                  </span>
+                </div>
+                <div className="flex justify-between text-xs">
+                  <div className="flex gap-1.5 items-center">
+                    <TrendingUp size={14} className="text-green-500" />
+                    <span className="text-green-600 font-mono font-bold">{formatCurrency(categoryStats.total.income, 2)}</span>
+                  </div>
+                  <div className="flex gap-1.5 items-center">
+                    <TrendingDown size={14} className="text-red-500" />
+                    <span className="text-red-500 font-mono font-bold">{formatCurrency(categoryStats.total.expense, 2)}</span>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Desktop View */}
+          <div className="hidden sm:block overflow-x-auto">
             <table className="w-full text-sm text-left">
               <thead className="text-xs text-[#7a7a7a] uppercase bg-[#f5f5f7] border-b border-hairline">
                 <tr>

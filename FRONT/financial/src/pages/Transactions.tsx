@@ -5,6 +5,7 @@ import { TransactionTable } from '../components/TransactionTable';
 import { TransactionFilter, type TransactionFilters } from '../components/TransactionFilter';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import {
@@ -24,6 +25,7 @@ export const Transactions: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<number | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>({
     SortBy: 'Date',
     SortDescending: true,
@@ -210,14 +212,19 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Ви впевнені, що хочете видалити цю транзакцію?')) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        invalidateTransactions();
-      } catch (error) {
-        console.error('Error deleting transaction:', error);
-      }
+  const handleDelete = (id: number) => {
+    setTransactionToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: transactionToDelete });
+      invalidateTransactions();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    } finally {
+      setTransactionToDelete(null);
     }
   };
 
@@ -462,6 +469,14 @@ export const Transactions: React.FC = () => {
           })}
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={transactionToDelete !== null}
+        title="Видалення транзакції"
+        message="Ви впевнені, що хочете видалити цю транзакцію? Цю дію неможливо скасувати."
+        onConfirm={confirmDelete}
+        onCancel={() => setTransactionToDelete(null)}
+      />
     </div>
   );
 };

@@ -4,6 +4,7 @@ import { DashboardSection } from '../components/DashboardSection';
 import { SourceCard } from '../components/SourceCard';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import {
@@ -19,6 +20,7 @@ export const Sources: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingSource, setEditingSource] = useState<any>(null);
+  const [sourceToDelete, setSourceToDelete] = useState<number | null>(null);
   const [formData, setFormData] = useState<{ name: string; currencyId: string | number; amount: number }>({
     name: '',
     currencyId: '',
@@ -121,14 +123,19 @@ export const Sources: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Ви впевнені, що хочете видалити це джерело?')) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        invalidateSources();
-      } catch (error) {
-        console.error('Error deleting source:', error);
-      }
+  const handleDelete = (id: number) => {
+    setSourceToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!sourceToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: sourceToDelete });
+      invalidateSources();
+    } catch (error) {
+      console.error('Error deleting source:', error);
+    } finally {
+      setSourceToDelete(null);
     }
   };
 
@@ -280,6 +287,14 @@ export const Sources: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={sourceToDelete !== null}
+        title="Видалення джерела"
+        message="Ви впевнені, що хочете видалити це джерело? Усі пов'язані транзакції можуть бути також видалені або змінені."
+        onConfirm={confirmDelete}
+        onCancel={() => setSourceToDelete(null)}
+      />
     </div>
   );
 };

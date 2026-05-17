@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardSection } from '../components/DashboardSection';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import { customInstance } from '../api/custom-instance';
@@ -83,6 +84,7 @@ export const PlannedTransactions: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PlannedTransactionDto | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormState>(emptyForm());
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [editErrors, setEditErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -185,9 +187,18 @@ export const PlannedTransactions: React.FC = () => {
     setEditErrors({});
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Видалити заплановану транзакцію?')) {
-      await deleteMutation.mutateAsync(id);
+  const handleDelete = (id: number) => {
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteMutation.mutateAsync(itemToDelete);
+    } catch (error) {
+      console.error('Error deleting planned transaction:', error);
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -567,6 +578,14 @@ export const PlannedTransactions: React.FC = () => {
           })}
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={itemToDelete !== null}
+        title="Видалення планової транзакції"
+        message="Ви впевнені, що хочете видалити цю планову транзакцію?"
+        onConfirm={confirmDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 };

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import { Pencil, Trash2, FolderOpen } from 'lucide-react';
@@ -17,6 +18,7 @@ export const Categories: React.FC = () => {
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [editingCategory, setEditingCategory] = useState<{ id: number; name: string } | null>(null);
+  const [categoryToDelete, setCategoryToDelete] = useState<number | null>(null);
   const [categoryName, setCategoryName] = useState('');
   const [error, setError] = useState('');
 
@@ -72,15 +74,20 @@ export const Categories: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Ви впевнені, що хочете видалити цю категорію?')) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        queryClient.invalidateQueries({ queryKey: ['/api/Category'] });
-      } catch (err) {
-        console.error('Error deleting category:', err);
-        alert('Помилка видалення категорії. Можливо вона використовується в транзакціях.');
-      }
+  const handleDelete = (id: number) => {
+    setCategoryToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!categoryToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: categoryToDelete });
+      queryClient.invalidateQueries({ queryKey: ['/api/Category'] });
+    } catch (err) {
+      console.error('Error deleting category:', err);
+      alert('Помилка видалення категорії. Можливо вона використовується в транзакціях.');
+    } finally {
+      setCategoryToDelete(null);
     }
   };
 
@@ -191,6 +198,14 @@ export const Categories: React.FC = () => {
           </div>
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={categoryToDelete !== null}
+        title="Видалення категорії"
+        message="Ви впевнені, що хочете видалити цю категорію?"
+        onConfirm={confirmDelete}
+        onCancel={() => setCategoryToDelete(null)}
+      />
     </div>
   );
 };
