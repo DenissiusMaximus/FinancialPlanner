@@ -2,11 +2,34 @@ using API.Services.Transaction;
 using API.Utils.Notification;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Storage;
+using System.Linq;
+using System.Collections.Generic;
+using API.Domain.BalanceManagement.Strategies;
 
-namespace API.Domain.BalanceManagement;
-
-public class BalanceManagementService(AppDbContext context, NotificationContext notificationContext) : IBalanceManagementService
+namespace API.Domain.BalanceManagement
 {
+    public class BalanceManagementService : IBalanceManagementService
+    {
+        private readonly IEnumerable<IBalanceCalculationStrategy> _strategies;
+
+        // Injecting all registered strategies
+        public BalanceManagementService(IEnumerable<IBalanceCalculationStrategy> strategies)
+        {
+            _strategies = strategies;
+        }
+
+        public void UpdateBalance(Source source, Transaction transaction)
+        {
+            var strategy = _strategies.FirstOrDefault(s => s.AppliesTo(transaction.Type));
+            
+            if (strategy == null)
+            {
+                throw new System.InvalidOperationException($"No balance calculation strategy found for transaction type: {transaction.Type}");
+            }
+
+            source.Balance = strategy.CalculateNewBalance(source.Balance, transaction.Amount);
+        }
+        
     public bool IsTransactionModified(Models.Transaction original, Models.Transaction updated)
     {
         return original.Amount != updated.Amount || 
@@ -103,4 +126,5 @@ public class BalanceManagementService(AppDbContext context, NotificationContext 
         
         return true;
     }
+}
 }
