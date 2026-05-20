@@ -95,12 +95,6 @@ builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
 
 builder.Services.AddProblemDetails();
 
-builder.Services.AddScoped<IBalanceManagementService, BalanceManagementService>();
-
-// Registering strategies for Balance Management
-builder.Services.AddScoped<IBalanceCalculationStrategy, IncomeCalculationStrategy>();
-builder.Services.AddScoped<IBalanceCalculationStrategy, ExpenseCalculationStrategy>();
-
 var app = builder.Build();
 
 if (app.Environment.IsDevelopment())
