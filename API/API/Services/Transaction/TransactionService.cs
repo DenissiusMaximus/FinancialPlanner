@@ -20,10 +20,13 @@ public class TransactionService(
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var source = await GetUserSourceAsync(createTransactionInput.SourceId, userId);
+        var source =
+            await context.Sources.FirstOrDefaultAsync(s =>
+                s.Id == createTransactionInput.SourceId && s.UserId == userId);
 
         if (source == null)
         {
+            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
             return null;
         }
 
@@ -49,17 +52,19 @@ public class TransactionService(
     public async Task<bool> DeleteTransaction(int id)
     {
         var userId = currentUserContext.RequiredUserId;
-        var transaction = await GetUserTransactionAsync(id, userId);
+        var transaction = context.Transactions.FirstOrDefault(t => t.Id == id && t.UserId == userId);
 
         if (transaction == null)
         {
+            notificationContext.AddNotification("Transaction not found", ErrorType.NotFound);
             return false;
         }
 
         var dbTransaction = await context.Database.BeginTransactionAsync();
 
-        if (IsAdjustmentTransaction(transaction, "deleted"))
+        if (transaction.TransactionTypeId == (int)TransactionTypeEnum.Adjustment)
         {
+            notificationContext.AddNotification("Adjustment transactions cannot be deleted", ErrorType.BadRequest);
             return false;
         }
 
@@ -78,17 +83,19 @@ public class TransactionService(
     {
         var userId = currentUserContext.RequiredUserId;
 
-        var transaction = await GetUserTransactionAsync(id, userId);
+        var transaction = context.Transactions.FirstOrDefault(t => t.Id == id && t.UserId == userId);
 
         if (transaction == null)
         {
+            notificationContext.AddNotification("Transaction not found", ErrorType.NotFound);
             return null;
         }
 
         var originalTransaction = transaction.Adapt<Models.Transaction>();
 
-        if (IsAdjustmentTransaction(transaction, "updated"))
+        if (transaction.TransactionTypeId == (int)TransactionTypeEnum.Adjustment)
         {
+            notificationContext.AddNotification("Adjustment transactions cannot be updated", ErrorType.BadRequest);
             return null;
         }
 
@@ -101,10 +108,12 @@ public class TransactionService(
             if (!await balanceManagementService.ResetTransaction(originalTransaction, userId))
                 return null;
 
-            var source = await GetUserSourceAsync(updatedTransaction.SourceId, userId);
-
+            var source = await context.Sources.FirstOrDefaultAsync(s =>
+                    s.Id == updatedTransaction.SourceId && s.UserId == userId);
+            
             if (source == null)
             {
+                notificationContext.AddNotification("Source not found", ErrorType.NotFound);
                 return null;
             }
 
@@ -170,46 +179,5 @@ public class TransactionService(
         };
 
         return paginated;
-    }
-
-    private async Task<Models.Transaction?> GetUserTransactionAsync(int id, int userId)
-    {
-        var transaction = await context.Transactions
-            .FirstOrDefaultAsync(t => t.Id == id && t.UserId == userId);
-
-        if (transaction == null)
-        {
-            notificationContext.AddNotification("Transaction not found", ErrorType.NotFound);
-        }
-
-        return transaction;
-    }
-
-    private async Task<Source?> GetUserSourceAsync(int sourceId, int userId)
-    {
-        var source = await context.Sources
-            .FirstOrDefaultAsync(s => s.Id == sourceId && s.UserId == userId);
-
-        if (source == null)
-        {
-            notificationContext.AddNotification("Source not found", ErrorType.NotFound);
-        }
-
-        return source;
-    }
-
-    private bool IsAdjustmentTransaction(Models.Transaction transaction, string action)
-    {
-        if (transaction.TransactionTypeId == (int)TransactionTypeEnum.Adjustment)
-        {
-            notificationContext.AddNotification(
-                $"Adjustment transactions cannot be {action}",
-                ErrorType.BadRequest
-            );
-
-            return true;
-        }
-
-        return false;
     }
 }
