@@ -1,10 +1,12 @@
 using API.Models.ViewModels;
 using API.Services;
 using API.Services.Transaction;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 
 namespace API.Controllers;
 
+[Authorize(AuthenticationSchemes = "Identity.Application")]
 public class HomeController : Controller
 {
     private const int PageSize = 4;
