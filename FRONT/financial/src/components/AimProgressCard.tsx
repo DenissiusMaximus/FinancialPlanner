@@ -27,6 +27,7 @@ interface AimProgressCardProps {
   onEdit?: (aim: AimProgress) => void;
   onDelete?: (id: number) => void;
   isDragging?: boolean;
+  isDraggable?: boolean;
 }
 
 const IconEdit = () => (
@@ -54,7 +55,7 @@ const IconDragHandle = () => (
   </svg>
 );
 
-export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, onDelete, isDragging: externalIsDragging }) => {
+export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, onDelete, isDragging: externalIsDragging, isDraggable = true }) => {
   const {
     attributes,
     listeners,
@@ -83,24 +84,27 @@ export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, o
 
   return (
     <div
-      ref={setNodeRef}
+      ref={isDraggable ? setNodeRef : undefined}
       style={style}
       className={`flex gap-3 ${isDragging ? 'opacity-50' : ''}`}
-      {...attributes}
+      data-sortable-item={isDraggable ? 'true' : undefined}
+      {...(isDraggable ? attributes : {})}
     >
       {/* Left Section: Priority + Drag Handle */}
       <div
-        className="flex flex-col items-center gap-1.5 pt-2 flex-shrink-0"
-        {...listeners}
+        className={`flex flex-col items-center gap-1.5 pt-2 flex-shrink-0 ${isDraggable ? 'touch-none' : ''}`}
+        {...(isDraggable ? listeners : {})}
       >
         {/* Priority Badge */}
         <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-primary/10 border border-primary/20">
           <span className="text-xs font-bold text-primary">{aim.priority}</span>
         </div>
-        {/* Drag Handle */}
-        <div className="cursor-grab active:cursor-grabbing text-primary/40 hover:text-primary/60 transition-colors">
-          <IconDragHandle />
-        </div>
+        {/* Drag Handle — enlarged touch target for mobile */}
+        {isDraggable && (
+          <div className="cursor-grab active:cursor-grabbing text-primary/40 hover:text-primary/60 transition-colors p-2 -m-2">
+            <IconDragHandle />
+          </div>
+        )}
       </div>
 
       {/* Main Card Content */}
@@ -114,25 +118,51 @@ export const AimProgressCard: React.FC<AimProgressCardProps> = ({ aim, onEdit, o
           <h4 className="text-sm font-semibold text-ink flex-1 pr-2 line-clamp-2 leading-snug">
             {aim.name}
           </h4>
-          {showActions && showActionButtons ? (
+          {showActionButtons ? (
             <div className="flex gap-1 shrink-0">
-              {onEdit && (
-                <button
-                  className="text-[#7a7a7a] hover:text-primary transition-colors p-1 rounded hover:bg-primary/5"
-                  onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
-                  title="Редагувати"
-                >
-                  <IconEdit />
-                </button>
-              )}
-              {onDelete && (
-                <button
-                  className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
-                  onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
-                  title="Видалити"
-                >
-                  <IconTrash />
-                </button>
+              {/* Always visible on mobile */}
+              <div className="flex gap-1 sm:hidden">
+                {onEdit && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-primary transition-colors p-2 rounded touch-manipulation"
+                    onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
+                    title="Редагувати"
+                  >
+                    <IconEdit />
+                  </button>
+                )}
+                {onDelete && (
+                  <button
+                    className="text-[#7a7a7a] hover:text-red-500 transition-colors p-2 rounded touch-manipulation"
+                    onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
+                    title="Видалити"
+                  >
+                    <IconTrash />
+                  </button>
+                )}
+              </div>
+              {/* Hover-visible on desktop */}
+              {showActions && (
+                <div className="hidden sm:flex gap-1">
+                  {onEdit && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-primary transition-colors p-1 rounded hover:bg-primary/5"
+                      onClick={(e) => { e.stopPropagation(); onEdit(aim); }}
+                      title="Редагувати"
+                    >
+                      <IconEdit />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1 rounded hover:bg-red-50"
+                      onClick={(e) => { e.stopPropagation(); onDelete(aim.id); }}
+                      title="Видалити"
+                    >
+                      <IconTrash />
+                    </button>
+                  )}
+                </div>
               )}
             </div>
           ) : (

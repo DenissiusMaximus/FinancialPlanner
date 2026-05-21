@@ -1,0 +1,18 @@
+# Build artifacts
+**/bin/
+**/obj/
+
+# IDE files
+.vs/
+.idea/
+.vscode/
+**/*.user
+**/*.suo
+
+# Logs
+API/logs/
+
+# Local configuration with secrets
+**/appsettings.Development.json
+**/appsettings.Local.json
+**/.env

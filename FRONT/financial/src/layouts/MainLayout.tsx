@@ -8,8 +8,8 @@ export const MainLayout = () => {
       <Sidebar />
       {/* On mobile: normal flow below sticky top bar.
           On desktop: offset right to leave room for the fixed 256px sidebar */}
-      <main className="flex-1 lg:mr-64">
-        <div className="min-h-screen px-4 py-6 sm:px-6 lg:px-8 lg:py-8 bg-[#fafafc]">
+      <main className="flex-1 lg:mr-64 overflow-x-hidden">
+        <div className="min-h-screen px-3 py-4 sm:px-6 lg:px-8 lg:py-8 bg-[#fafafc]">
           <Outlet />
         </div>
       </main>

@@ -1,7 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Target, CheckCircle2, Calendar, TrendingUp, AlertCircle } from 'lucide-react';
-import { DashboardSection } from '../components/DashboardSection';
+import { Target, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -9,14 +8,12 @@ import { customInstance } from '../api/custom-instance';
 import { useGetApiAim } from '../api/generated/endpoints';
 import { formatCurrency } from '../utils/formatters';
 import { isIncomeType, isExpenseType } from '../utils/display-helpers';
-import { useCurrencyStore } from '../store/currencyStore';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
 import type { PlannedTransactionDto, AimDto } from '../types/generated';
 
 export const Planning: React.FC = () => {
   const [monthsToForecast, setMonthsToForecast] = useState<number>(6);
-  const selectedCurrency = useCurrencyStore((s) => s.selectedCurrency);
-  const { convert } = useCurrencyConvert();
+  const { convert, selectedCurrencyName } = useCurrencyConvert();
 
   // API Queries
   const aimsQuery = useGetApiAim();
@@ -31,7 +28,11 @@ export const Planning: React.FC = () => {
   const aims = (Array.isArray(aimsRaw?.data) ? aimsRaw.data : Array.isArray(aimsRaw) ? aimsRaw : []) as AimDto[];
   
   const plannedRaw = plannedQuery.data as any;
-  const planned = (Array.isArray(plannedRaw?.data) ? plannedRaw.data : Array.isArray(plannedRaw) ? plannedRaw : []) as PlannedTransactionDto[];
+  const planned = (
+    Array.isArray(plannedRaw?.data) ? plannedRaw.data :
+    Array.isArray(plannedRaw?.items) ? plannedRaw.items :
+    Array.isArray(plannedRaw) ? plannedRaw : []
+  ) as PlannedTransactionDto[];
 
   // 1. Calculate Expected Monthly Savings Rate & Category Expenses
   const { monthlyIncome, monthlyExpense, monthlySavings, expenseByCategory } = useMemo(() => {
@@ -70,7 +71,7 @@ export const Planning: React.FC = () => {
       monthlySavings: inc - exp,
       expenseByCategory: catMap
     };
-  }, [planned]);
+  }, [planned, convert, selectedCurrencyName]);
 
   // 2. Waterfall Forecast Logic
   const forecastAims = useMemo(() => {
@@ -123,7 +124,7 @@ export const Planning: React.FC = () => {
         newProgressPercentage: Math.min(((collected + forecastedAdditionalCollection) / target) * 100, 100)
       };
     });
-  }, [aims, monthlySavings, monthsToForecast]);
+  }, [aims, monthlySavings, monthsToForecast, convert, selectedCurrencyName]);
 
   const targetDate = useMemo(() => {
     const d = new Date();
@@ -177,23 +178,24 @@ export const Planning: React.FC = () => {
               <span>5 років</span>
             </div>
 
-            <div className="grid grid-cols-3 gap-4 pt-4 border-t border-[#f0f0f0]">
-              <div>
-                <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Накопичення</div>
-                <div className={`text-2xl font-mono font-bold ${monthlySavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                  {formatCurrency(monthlySavings * monthsToForecast, 0)} {selectedCurrency}
-                </div>
+            {/* Savings highlight */}
+            <div className="pt-4 border-t border-[#f0f0f0]">
+              <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Накопичення</div>
+              <div className={`text-2xl sm:text-3xl font-mono font-bold ${monthlySavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {formatCurrency(monthlySavings * monthsToForecast, 0)} {selectedCurrencyName}
               </div>
+            </div>
+            <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Доходів</div>
-                <div className="text-xl font-mono font-bold text-ink">
-                  {formatCurrency(monthlyIncome * monthsToForecast, 0)} {selectedCurrency}
+                <div className="text-lg font-mono font-bold text-ink">
+                  {formatCurrency(monthlyIncome * monthsToForecast, 0)} {selectedCurrencyName}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Витрат</div>
-                <div className="text-xl font-mono font-bold text-ink">
-                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrency}
+                <div className="text-lg font-mono font-bold text-ink">
+                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrencyName}
                 </div>
               </div>
             </div>
@@ -222,22 +224,22 @@ export const Planning: React.FC = () => {
               
               {forecastAims.length > 0 ? (
                 <div className="grid gap-4 grid-cols-1">
-                  {forecastAims.map((aim, index) => (
+                  {forecastAims.map((aim) => (
                     <Card key={aim.id} className="border border-hairline p-5">
-                      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+                      <div className="flex flex-col gap-3 mb-4">
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             <span className="text-xs font-bold text-[#7a7a7a] bg-[#f5f5f7] px-2 py-0.5 rounded-md">
                               Пріоритет {aim.priority}
                             </span>
-                            <h4 className="text-lg font-semibold text-ink">{aim.name}</h4>
+                            <h4 className="text-base sm:text-lg font-semibold text-ink">{aim.name}</h4>
                           </div>
                           <div className="text-sm text-[#7a7a7a]">
-                            Залишилось зібрати: <span className="font-mono font-medium text-ink">{formatCurrency(aim.remainingToCollect, 0)}</span> {selectedCurrency}
+                            Залишилось зібрати: <span className="font-mono font-medium text-ink">{formatCurrency(aim.remainingToCollect, 0)}</span> {selectedCurrencyName}
                           </div>
                         </div>
                         
-                        <div className="text-right shrink-0">
+                        <div className="self-start">
                           {aim.willAchieveInForecast ? (
                             <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
                               <CheckCircle2 size={16} />
@@ -271,9 +273,9 @@ export const Planning: React.FC = () => {
                           />
                         </div>
                         <div className="flex justify-between text-[11px] text-[#7a7a7a]">
-                          <span>Зібрано: {formatCurrency(aim.collected, 0)} {selectedCurrency}</span>
-                          <span>Додасться: +{formatCurrency(aim.forecastedAdditionalCollection, 0)} {selectedCurrency}</span>
-                          <span>Ціль: {formatCurrency(aim.target, 0)} {selectedCurrency}</span>
+                          <span>Зібрано: {formatCurrency(aim.collected, 0)} {selectedCurrencyName}</span>
+                          <span>Додасться: +{formatCurrency(aim.forecastedAdditionalCollection, 0)} {selectedCurrencyName}</span>
+                          <span>Ціль: {formatCurrency(aim.target, 0)} {selectedCurrencyName}</span>
                         </div>
                       </div>
                     </Card>
@@ -305,7 +307,7 @@ export const Planning: React.FC = () => {
                     <div key={cat} className="flex justify-between items-center border-b border-hairline/50 pb-2 last:border-0 last:pb-0">
                       <span className="text-sm font-medium text-[#7a7a7a]">{cat}</span>
                       <span className="font-mono font-semibold text-ink">
-                        {formatCurrency(amount * monthsToForecast, 0)} {selectedCurrency}
+                        {formatCurrency(amount * monthsToForecast, 0)} {selectedCurrencyName}
                       </span>
                     </div>
                   ))
@@ -320,7 +322,7 @@ export const Planning: React.FC = () => {
               <div className="mt-4 pt-4 border-t border-hairline flex justify-between items-center">
                 <span className="text-sm font-semibold text-ink">Всього витрат</span>
                 <span className="text-lg font-mono font-bold text-red-500">
-                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrency}
+                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrencyName}
                 </span>
               </div>
             )}

@@ -7,6 +7,7 @@ import {
   closestCenter,
   KeyboardSensor,
   PointerSensor,
+  TouchSensor,
   useSensor,
   useSensors,
   type DragEndEvent,
@@ -15,6 +16,7 @@ import { SortableContext, sortableKeyboardCoordinates, verticalListSortingStrate
 import { AimProgressCard } from '../components/AimProgressCard';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { SourceSelectionModal } from '../components/SourceSelectionModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -143,6 +145,7 @@ export const Aims: React.FC = () => {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isSourceSelectionModalOpen, setIsSourceSelectionModalOpen] = useState(false);
   const [isEditingView, setIsEditingView] = useState(false);
+  const [aimToDelete, setAimToDelete] = useState<number | null>(null);
   const [selectedAimId, setSelectedAimId] = useState<number | null>(null);
   const [formData, setFormData] = useState<AimFormState>(EMPTY_FORM);
   const [createErrors, setCreateErrors] = useState<AimErrorState>({});
@@ -151,9 +154,14 @@ export const Aims: React.FC = () => {
   const [detailError, setDetailError] = useState<string | null>(null);
   const [editTriggered, setEditTriggered] = useState(false);
 
-  // DnD Sensors
+  // DnD Sensors — separate pointer (mouse/trackpad) from touch to avoid conflicts
   const sensors = useSensors(
-    useSensor(PointerSensor),
+    useSensor(PointerSensor, {
+      activationConstraint: { distance: 5 },
+    }),
+    useSensor(TouchSensor, {
+      activationConstraint: { delay: 200, tolerance: 8 },
+    }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
 
@@ -328,15 +336,21 @@ export const Aims: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (!window.confirm('Ви впевнені, що хочете видалити цю ціль?')) return;
+  const handleDelete = (id: number) => {
+    setAimToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!aimToDelete) return;
     try {
-      await deleteMutation.mutateAsync({ id });
-      if (selectedAimId === id) setSelectedAimId(null);
+      await deleteMutation.mutateAsync({ id: aimToDelete });
+      if (selectedAimId === aimToDelete) setSelectedAimId(null);
       setPageError(null);
       invalidateAims();
     } catch (error) {
       setPageError(getErrorMessage(error));
+    } finally {
+      setAimToDelete(null);
     }
   };
 
@@ -439,21 +453,42 @@ export const Aims: React.FC = () => {
         }
       }
 
-      // Execute all updates
-      for (const update of updatesToExecute) {
-        const aimToUpdate = sortedAims.find((a) => a.id === update.id);
-        if (aimToUpdate) {
-          await updateMutation.mutateAsync({
-            id: aimToUpdate.id,
-            data: {
-              name: aimToUpdate.name,
-              amount: Number(aimToUpdate.amount),
-              priority: update.newPrio,
-              currencyId: Number(aimToUpdate.currency?.id),
-            },
-          });
-        }
-      }
+      // OPTIMISTIC UPDATE: Update React Query cache immediately
+      queryClient.setQueryData(['/api/Aim'], (oldData: any) => {
+        if (!oldData) return oldData;
+        const items = Array.isArray(oldData?.data) ? oldData.data : Array.isArray(oldData?.items) ? oldData.items : Array.isArray(oldData) ? oldData : [];
+        
+        const newItems = items.map((aim: any) => {
+          const update = updatesToExecute.find((u) => u.id === aim.id);
+          if (update) {
+            return { ...aim, priority: update.newPrio };
+          }
+          return aim;
+        });
+        
+        if (Array.isArray(oldData?.data)) return { ...oldData, data: newItems };
+        if (Array.isArray(oldData?.items)) return { ...oldData, items: newItems };
+        if (Array.isArray(oldData)) return newItems;
+        return oldData;
+      });
+
+      // Execute all updates in parallel
+      await Promise.all(
+        updatesToExecute.map(async (update) => {
+          const aimToUpdate = sortedAims.find((a) => a.id === update.id);
+          if (aimToUpdate) {
+            await updateMutation.mutateAsync({
+              id: aimToUpdate.id,
+              data: {
+                name: aimToUpdate.name,
+                amount: Number(aimToUpdate.amount),
+                priority: update.newPrio,
+                currencyId: Number(aimToUpdate.currency?.id),
+              },
+            });
+          }
+        })
+      );
 
       invalidateAims();
     } catch (error) {
@@ -550,11 +585,11 @@ export const Aims: React.FC = () => {
                         <h2 className="text-2xl font-semibold text-ink">{selectedAim.name}</h2>
                       </div>
 
-                      <div className="flex gap-2 flex-shrink-0">
-                        <Button variant="secondary" onClick={() => handleEditOpen(selectedAim)}>
+                      <div className="flex flex-col gap-2 shrink-0">
+                        <Button variant="secondary" size="sm" onClick={() => handleEditOpen(selectedAim)}>
                           Редагувати
                         </Button>
-                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)}>
+                        <Button onClick={() => selectedAim.id && handleDelete(selectedAim.id)} variant="danger" size="sm">
                           Видалити
                         </Button>
                       </div>
@@ -704,7 +739,7 @@ export const Aims: React.FC = () => {
                                 e.stopPropagation();
                                 source.id && handleRemoveSource(source.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity text-primary/60 hover:text-primary ml-1 p-0.5"
+                              className="opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity text-primary/60 hover:text-primary ml-1 p-1 touch-manipulation"
                               title="Видалити"
                             >
                               <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -765,6 +800,14 @@ export const Aims: React.FC = () => {
         linkedSourceIds={linkedSourceIds}
         onConfirm={handleAddSources}
         isLoading={addSourceMutation.isPending}
+      />
+
+      <ConfirmModal
+        isOpen={aimToDelete !== null}
+        title="Видалення цілі"
+        message="Ви впевнені, що хочете видалити цю ціль?"
+        onConfirm={confirmDelete}
+        onCancel={() => setAimToDelete(null)}
       />
     </div>
   );

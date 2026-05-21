@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { DashboardSection } from '../components/DashboardSection';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import { customInstance } from '../api/custom-instance';
@@ -83,6 +84,7 @@ export const PlannedTransactions: React.FC = () => {
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<PlannedTransactionDto | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<number | null>(null);
   const [formData, setFormData] = useState<FormState>(emptyForm());
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [editErrors, setEditErrors] = useState<Partial<Record<keyof FormState, string>>>({});
@@ -185,9 +187,18 @@ export const PlannedTransactions: React.FC = () => {
     setEditErrors({});
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Видалити заплановану транзакцію?')) {
-      await deleteMutation.mutateAsync(id);
+  const handleDelete = (id: number) => {
+    setItemToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!itemToDelete) return;
+    try {
+      await deleteMutation.mutateAsync(itemToDelete);
+    } catch (error) {
+      console.error('Error deleting planned transaction:', error);
+    } finally {
+      setItemToDelete(null);
     }
   };
 
@@ -398,71 +409,138 @@ export const PlannedTransactions: React.FC = () => {
         action={<Button onClick={() => { setFormData(emptyForm()); setCreateErrors({}); setIsCreateOpen(true); }}>+ Нова планова транзакція</Button>}
       >
         {planned.length > 0 ? (
-          <div className="w-full overflow-x-auto">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-[#f5f5f7] border-b border-hairline">
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Назва</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Тип</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Сума</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дата початку</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Частота</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Джерело</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Категорія</th>
-                  <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дії</th>
-                </tr>
-              </thead>
-              <tbody>
-                {planned.map((item) => (
-                  <tr key={item.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
-                    <td className="px-4 py-3 text-ink font-medium">{item.name || '—'}</td>
-                    <td className="px-4 py-3">
-                      {item.transactionType && (
-                        <span
-                          className="font-medium text-xs px-2 py-0.5 rounded-full"
-                          style={{
-                            color: getTypeColor(item.transactionType.name ?? ''),
-                            backgroundColor: getTypeColor(item.transactionType.name ?? '') + '18',
-                          }}
-                        >
-                          {item.transactionType.name}
-                        </span>
-                      )}
-                    </td>
-                    <td
-                      className="px-4 py-3 font-mono font-semibold"
-                      style={{ color: getTypeColor(item.transactionType?.name ?? '') }}
-                    >
-                      {(item.amount ?? 0).toFixed(2)} {item.currency?.name ?? ''}
-                    </td>
-                    <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs">
-                      {item.startDate ? new Date(item.startDate).toLocaleDateString('uk-UA') : '—'}
-                    </td>
-                    <td className="px-4 py-3 text-ink">{item.frequency?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-ink">{item.source?.name ?? '—'}</td>
-                    <td className="px-4 py-3 text-ink">{item.category?.name ?? '—'}</td>
-                    <td className="px-4 py-3">
-                      <div className="flex gap-1">
-                        <button
-                          className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
-                          onClick={() => handleEditOpen(item)}
-                          title="Редагувати"
-                        >
-                          <IconEdit />
-                        </button>
-                        <button
-                          className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                          onClick={() => item.id && handleDelete(item.id)}
-                          title="Видалити"
-                        >
-                          <IconTrash />
-                        </button>
+          <div className="w-full">
+            {/* Mobile card list */}
+            <div className="sm:hidden space-y-2">
+              {planned.map((item) => (
+                <div
+                  key={item.id}
+                  className="bg-white border border-[#f0f0f0] rounded-xl p-4"
+                >
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 flex-wrap mb-1">
+                        {item.transactionType && (
+                          <span
+                            className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                            style={{
+                              color: getTypeColor(item.transactionType.name ?? ''),
+                              backgroundColor: getTypeColor(item.transactionType.name ?? '') + '18',
+                            }}
+                          >
+                            {item.transactionType.name}
+                          </span>
+                        )}
+                        {item.frequency?.name && (
+                          <span className="text-xs text-[#7a7a7a] bg-[#f5f5f7] px-2 py-0.5 rounded-full">
+                            {item.frequency.name}
+                          </span>
+                        )}
                       </div>
-                    </td>
+                      <div className="font-semibold text-ink text-sm truncate">
+                        {item.name || item.source?.name || '—'}
+                      </div>
+                      <div className="flex items-center gap-3 mt-1 flex-wrap">
+                        <span
+                          className="font-mono font-bold text-base"
+                          style={{ color: getTypeColor(item.transactionType?.name ?? '') }}
+                        >
+                          {(item.amount ?? 0).toFixed(2)}
+                          <span className="text-xs font-normal ml-1">{item.currency?.name}</span>
+                        </span>
+                        {item.source?.name && (
+                          <span className="text-xs text-[#7a7a7a]">{item.source.name}</span>
+                        )}
+                      </div>
+                    </div>
+                    <div className="flex gap-1 shrink-0">
+                      <button
+                        className="text-[#7a7a7a] hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/5 touch-manipulation"
+                        onClick={() => handleEditOpen(item)}
+                        title="Редагувати"
+                      >
+                        <IconEdit />
+                      </button>
+                      <button
+                        className="text-[#7a7a7a] hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 touch-manipulation"
+                        onClick={() => item.id && handleDelete(item.id)}
+                        title="Видалити"
+                      >
+                        <IconTrash />
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+
+            {/* Desktop table */}
+            <div className="hidden sm:block overflow-x-auto">
+              <table className="w-full border-collapse text-sm">
+                <thead>
+                  <tr className="bg-[#f5f5f7] border-b border-hairline">
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Назва</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Тип</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Сума</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дата початку</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Частота</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Джерело</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Категорія</th>
+                    <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дії</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {planned.map((item) => (
+                    <tr key={item.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
+                      <td className="px-4 py-3 text-ink font-medium">{item.name || '—'}</td>
+                      <td className="px-4 py-3">
+                        {item.transactionType && (
+                          <span
+                            className="font-medium text-xs px-2 py-0.5 rounded-full"
+                            style={{
+                              color: getTypeColor(item.transactionType.name ?? ''),
+                              backgroundColor: getTypeColor(item.transactionType.name ?? '') + '18',
+                            }}
+                          >
+                            {item.transactionType.name}
+                          </span>
+                        )}
+                      </td>
+                      <td
+                        className="px-4 py-3 font-mono font-semibold"
+                        style={{ color: getTypeColor(item.transactionType?.name ?? '') }}
+                      >
+                        {(item.amount ?? 0).toFixed(2)} {item.currency?.name ?? ''}
+                      </td>
+                      <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs">
+                        {item.startDate ? new Date(item.startDate).toLocaleDateString('uk-UA') : '—'}
+                      </td>
+                      <td className="px-4 py-3 text-ink">{item.frequency?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-ink">{item.source?.name ?? '—'}</td>
+                      <td className="px-4 py-3 text-ink">{item.category?.name ?? '—'}</td>
+                      <td className="px-4 py-3">
+                        <div className="flex gap-1">
+                          <button
+                            className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
+                            onClick={() => handleEditOpen(item)}
+                            title="Редагувати"
+                          >
+                            <IconEdit />
+                          </button>
+                          <button
+                            className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                            onClick={() => item.id && handleDelete(item.id)}
+                            title="Видалити"
+                          >
+                            <IconTrash />
+                          </button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
           </div>
         ) : (
           <EmptyState
@@ -500,6 +578,14 @@ export const PlannedTransactions: React.FC = () => {
           })}
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={itemToDelete !== null}
+        title="Видалення планової транзакції"
+        message="Ви впевнені, що хочете видалити цю планову транзакцію?"
+        onConfirm={confirmDelete}
+        onCancel={() => setItemToDelete(null)}
+      />
     </div>
   );
 };

@@ -55,82 +55,170 @@ export const TransactionTable: React.FC<TransactionTableProps> = ({
   onDelete,
 }) => {
 
+  if (transactions.length === 0) {
+    return (
+      <div className="py-8 text-center text-[#7a7a7a]">
+        <p>Транзакцій не знайдено</p>
+      </div>
+    );
+  }
+
   return (
-    <div className="w-full overflow-x-auto">
-      <table className="w-full border-collapse text-sm">
-        <thead>
-          <tr className="bg-[#f5f5f7] border-b border-hairline">
-            <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дата</th>
-            <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Категорія</th>
-            <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Тип</th>
-            <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Сума</th>
-            <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Джерело</th>
-            {(onEdit || onDelete) && (
-              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дії</th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {transactions.map((transaction) => (
-            <tr key={transaction.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
-              <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs">
-                {new Date(transaction.date).toLocaleDateString('uk-UA')}
-              </td>
-              <td className="px-4 py-3 text-ink">{transaction.category?.name || '—'}</td>
-              <td className="px-4 py-3">
-                <span
-                  className="font-medium text-xs px-2 py-0.5 rounded-full inline-flex items-center"
-                  style={{
-                    color: getTransactionTypeColor(transaction.transactionType.name),
-                    backgroundColor: getTransactionTypeColor(transaction.transactionType.name) + '18',
-                  }}
-                >
-                  {getTransactionTypeLabel(transaction.transactionType.name).icon}
-                  {getTransactionTypeLabel(transaction.transactionType.name).label}
-                </span>
-              </td>
-              <td
-                className="px-4 py-3 font-mono font-semibold text-sm"
-                style={{ color: getTransactionTypeColor(transaction.transactionType.name) }}
-              >
-                {isExpenseType(transaction.transactionType.name) ? '-' : '+'}
-                {transaction.amount.toFixed(2)} {getCurrencyDisplay(transaction.currency?.name)}
-              </td>
-              <td className="px-4 py-3 text-ink">{transaction.source?.name ?? '—'}</td>
+    <div className="w-full">
+      {/* Mobile card list */}
+      <div className="sm:hidden space-y-2">
+        {transactions.map((transaction) => {
+          const typeColor = getTransactionTypeColor(transaction.transactionType.name);
+          const isExpense = isExpenseType(transaction.transactionType.name);
+          const typeInfo = getTransactionTypeLabel(transaction.transactionType.name);
+          return (
+            <div
+              key={transaction.id}
+              className="bg-white border border-[#f0f0f0] rounded-xl px-4 py-3 flex items-center gap-3"
+            >
+              {/* Color indicator */}
+              <div
+                className="w-1 self-stretch rounded-full shrink-0"
+                style={{ backgroundColor: typeColor }}
+              />
+              {/* Main info */}
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 mb-0.5">
+                  <span
+                    className="font-mono font-bold text-base"
+                    style={{ color: typeColor }}
+                  >
+                    {isExpense ? '-' : '+'}{transaction.amount.toFixed(2)}{' '}
+                    <span className="text-xs font-normal">{getCurrencyDisplay(transaction.currency?.name)}</span>
+                  </span>
+                  <span className="text-xs text-[#7a7a7a] font-mono shrink-0 whitespace-nowrap">
+                    {new Date(transaction.date).toLocaleString('uk-UA', { 
+                      year: 'numeric', month: '2-digit', day: '2-digit',
+                      hour: '2-digit', minute: '2-digit', second: '2-digit'
+                    })}
+                  </span>
+                </div>
+                <div className="flex items-center gap-2 flex-wrap">
+                  <span
+                    className="text-xs font-medium px-2 py-0.5 rounded-full inline-flex items-center gap-0.5"
+                    style={{ color: typeColor, backgroundColor: typeColor + '18' }}
+                  >
+                    {typeInfo.icon}{typeInfo.label}
+                  </span>
+                  {transaction.source?.name && (
+                    <span className="text-xs text-[#7a7a7a] truncate max-w-[120px]">
+                      {transaction.source.name}
+                    </span>
+                  )}
+                  {transaction.category?.name && (
+                    <span className="text-xs text-[#7a7a7a] bg-[#f5f5f7] px-1.5 py-0.5 rounded truncate max-w-[100px]">
+                      {transaction.category.name}
+                    </span>
+                  )}
+                </div>
+              </div>
+              {/* Action buttons — always visible on mobile */}
               {(onEdit || onDelete) && (
-                <td className="px-4 py-3">
-                  <div className="flex gap-1">
-                    {onEdit && (
-                      <button
-                        className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
-                        onClick={() => onEdit(transaction)}
-                        title="Редагувати"
-                      >
-                        <IconEdit />
-                      </button>
-                    )}
-                    {onDelete && (
-                      <button
-                        className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
-                        onClick={() => onDelete(transaction.id)}
-                        title="Видалити"
-                      >
-                        <IconTrash />
-                      </button>
-                    )}
-                  </div>
-                </td>
+                <div className="flex flex-col gap-1 shrink-0">
+                  {onEdit && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-primary transition-colors p-2 rounded-lg hover:bg-primary/5 touch-manipulation"
+                      onClick={() => onEdit(transaction)}
+                      title="Редагувати"
+                    >
+                      <IconEdit />
+                    </button>
+                  )}
+                  {onDelete && (
+                    <button
+                      className="text-[#7a7a7a] hover:text-red-500 transition-colors p-2 rounded-lg hover:bg-red-50 touch-manipulation"
+                      onClick={() => onDelete(transaction.id)}
+                      title="Видалити"
+                    >
+                      <IconTrash />
+                    </button>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })}
+      </div>
+
+      {/* Desktop table */}
+      <div className="hidden sm:block overflow-x-auto">
+        <table className="w-full border-collapse text-sm">
+          <thead>
+            <tr className="bg-[#f5f5f7] border-b border-hairline">
+              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дата</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Категорія</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Тип</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Сума</th>
+              <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Джерело</th>
+              {(onEdit || onDelete) && (
+                <th className="px-4 py-3 text-left font-semibold text-ink text-xs uppercase tracking-wider">Дії</th>
               )}
             </tr>
-          ))}
-        </tbody>
-      </table>
-
-      {transactions.length === 0 && (
-        <div className="py-8 text-center text-[#7a7a7a]">
-          <p>Транзакцій не знайдено</p>
-        </div>
-      )}
+          </thead>
+          <tbody>
+            {transactions.map((transaction) => (
+              <tr key={transaction.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
+                <td className="px-4 py-3 text-[#7a7a7a] font-mono text-xs whitespace-nowrap">
+                  {new Date(transaction.date).toLocaleString('uk-UA', { 
+                    year: 'numeric', month: '2-digit', day: '2-digit',
+                    hour: '2-digit', minute: '2-digit', second: '2-digit'
+                  })}
+                </td>
+                <td className="px-4 py-3 text-ink">{transaction.category?.name || '—'}</td>
+                <td className="px-4 py-3">
+                  <span
+                    className="font-medium text-xs px-2 py-0.5 rounded-full inline-flex items-center"
+                    style={{
+                      color: getTransactionTypeColor(transaction.transactionType.name),
+                      backgroundColor: getTransactionTypeColor(transaction.transactionType.name) + '18',
+                    }}
+                  >
+                    {getTransactionTypeLabel(transaction.transactionType.name).icon}
+                    {getTransactionTypeLabel(transaction.transactionType.name).label}
+                  </span>
+                </td>
+                <td
+                  className="px-4 py-3 font-mono font-semibold text-sm"
+                  style={{ color: getTransactionTypeColor(transaction.transactionType.name) }}
+                >
+                  {isExpenseType(transaction.transactionType.name) ? '-' : '+'}
+                  {transaction.amount.toFixed(2)} {getCurrencyDisplay(transaction.currency?.name)}
+                </td>
+                <td className="px-4 py-3 text-ink">{transaction.source?.name ?? '—'}</td>
+                {(onEdit || onDelete) && (
+                  <td className="px-4 py-3">
+                    <div className="flex gap-1">
+                      {onEdit && (
+                        <button
+                          className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5"
+                          onClick={() => onEdit(transaction)}
+                          title="Редагувати"
+                        >
+                          <IconEdit />
+                        </button>
+                      )}
+                      {onDelete && (
+                        <button
+                          className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50"
+                          onClick={() => onDelete(transaction.id)}
+                          title="Видалити"
+                        >
+                          <IconTrash />
+                        </button>
+                      )}
+                    </div>
+                  </td>
+                )}
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

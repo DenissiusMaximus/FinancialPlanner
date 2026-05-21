@@ -2357,7 +2357,7 @@
           },
           "date": {
             "type": "string",
-            "format": "date"
+            "format": "date-time"
           },
           "categoryId": {
             "type": "integer",
@@ -2633,7 +2633,7 @@
           },
           "date": {
             "type": "string",
-            "format": "date"
+            "format": "date-time"
           },
           "userId": {
             "type": "integer",

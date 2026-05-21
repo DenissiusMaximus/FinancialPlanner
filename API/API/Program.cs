@@ -32,6 +32,10 @@ var builder = WebApplication.CreateBuilder(args);
 
 MapConfig.Configure();
 
+var defaultConnection = builder.Configuration.GetConnectionString("DefaultConnection")
+    ?? throw new InvalidOperationException(
+        "Connection string 'DefaultConnection' is missing. Configure it via User Secrets or environment variable ConnectionStrings__DefaultConnection.");
+
 var allowedOrigins = builder.Configuration
     .GetSection("AllowedOrigins")
     .Get<string[]>()?
@@ -40,11 +44,11 @@ var allowedOrigins = builder.Configuration
 
 builder.Services.AddCors(options =>
 {
-    options.AddDefaultPolicy(policy =>
+    options.AddPolicy("AllowAll", policy =>
     {
-        policy.WithOrigins(allowedOrigins)
-            .AllowAnyMethod()
-            .AllowAnyHeader();
+        policy.AllowAnyOrigin() 
+              .AllowAnyHeader() 
+              .AllowAnyMethod();
     });
 });
 
@@ -56,7 +60,7 @@ builder.Host.UseSerilog(((context, configuration) => configuration
     ));
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(defaultConnection));
 
 builder.Services.AddSingleton<IPasswordHasher, PasswordHasher>();
 builder.Services.AddScoped<IJwtProvider, JwtProvider>();
@@ -115,39 +119,26 @@ builder.Services.AddProblemDetails();
 
 var app = builder.Build();
 
-app.UseCors();
-
-// if (app.Environment.IsDevelopment())
-// {
-//     using var scope = app.Services.CreateScope();
-//     var jwtService = scope.ServiceProvider.GetRequiredService<IJwtService>();
-
-//     var devToken = jwtService.GenerateDevAccessToken(1);
-
-//     app.Use(async (context, next) =>
-//     {
-//         if (!context.Request.Headers.ContainsKey("Authorization"))
-//         {
-//             context.Request.Headers.Append("Authorization", $"Bearer {devToken}");
-//         }
-
-//         await next();
-//     });
-// }
+app.UseForwardedHeaders(new ForwardedHeadersOptions
+{
+    ForwardedHeaders = Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedFor | 
+                       Microsoft.AspNetCore.HttpOverrides.ForwardedHeaders.XForwardedProto
+});
 
 
 app.UseExceptionHandler();
+
+app.UseRouting(); 
+
+app.UseCors("AllowAll");
 
 app.UseSerilogRequestLogging();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
-if (app.Environment.IsDevelopment())
-{
-    app.UseSwagger();
-    app.UseSwaggerUI();
-}
+app.UseSwagger();
+app.UseSwaggerUI();
 
 app.MapControllers();
 

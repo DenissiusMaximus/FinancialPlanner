@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { useGetApiUserMe, usePostApiUserLogout, useGetApiCurrency } from '../api/generated/endpoints';
 import { useAuthStore } from '../store/authStore';
 import { useCurrencyStore } from '../store/currencyStore';
@@ -67,6 +67,7 @@ const IconClose = () => (
 
 export const Sidebar: React.FC = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const clearAuth = useAuthStore((state) => state.clearAuth);
   const userQuery = useGetApiUserMe();
   const logoutMutation = usePostApiUserLogout();
@@ -203,15 +204,33 @@ export const Sidebar: React.FC = () => {
   return (
     <>
       {/* ── Mobile top bar ── */}
-      <div className="lg:hidden sticky top-0 z-50 flex items-center gap-3 bg-white border-b border-[#f0f0f0] px-4 py-3 shadow-sm">
-        <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
-          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-            <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
-          </svg>
-        </div>
-        <span className="font-display font-semibold text-ink text-sm flex-1">FinPlanner</span>
+      <div className="lg:hidden sticky top-0 z-50 flex items-center gap-2 bg-white border-b border-[#f0f0f0] px-4 py-3 shadow-sm">
         <button
-          className="p-1.5 rounded-lg text-[#7a7a7a] hover:text-ink hover:bg-[#f5f5f7] transition-colors"
+          className="flex items-center gap-2 flex-1 min-w-0 touch-manipulation"
+          onClick={() => navigate('/')}
+          aria-label="Перейти на головну"
+        >
+          <div className="h-7 w-7 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="white" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <line x1="12" y1="1" x2="12" y2="23" /><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6" />
+            </svg>
+          </div>
+          <span className="font-display font-semibold text-ink text-sm truncate">FinPlanner</span>
+        </button>
+        {/* Currency selector */}
+        <select
+          value={selectedCurrency ?? ''}
+          onChange={(e) => setSelectedCurrency(e.target.value)}
+          className="text-xs font-semibold text-primary bg-primary/8 border border-primary/20 rounded-lg px-2 py-1.5 focus:outline-none focus:border-primary touch-manipulation shrink-0"
+          aria-label="Валюта"
+          style={{ fontSize: 14 }}
+        >
+          {currencies.map((c: any) => (
+            <option key={c.id} value={c.name}>{c.name}</option>
+          ))}
+        </select>
+        <button
+          className="p-1.5 rounded-lg text-[#7a7a7a] hover:text-ink hover:bg-[#f5f5f7] transition-colors touch-manipulation"
           onClick={() => setMobileOpen(true)}
           aria-label="Відкрити меню"
         >

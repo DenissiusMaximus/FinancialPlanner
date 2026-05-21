@@ -5,6 +5,7 @@ import { TransactionTable } from '../components/TransactionTable';
 import { TransactionFilter, type TransactionFilters } from '../components/TransactionFilter';
 import { Button } from '../components/Button';
 import { Modal } from '../components/Modal';
+import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
 import {
@@ -17,12 +18,14 @@ import {
   useGetApiTransactionType,
 } from '../api/generated/endpoints';
 import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { getLocalDatetime } from '../utils/formatters';
 
 export const Transactions: React.FC = () => {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [editingTransaction, setEditingTransaction] = useState<any>(null);
+  const [transactionToDelete, setTransactionToDelete] = useState<number | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>({
     SortBy: 'Date',
     SortDescending: true,
@@ -38,7 +41,7 @@ export const Transactions: React.FC = () => {
     comment: string;
   }>({
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDatetime(),
     sourceId: '',
     transactionTypeId: '',
     categoryId: '',
@@ -65,16 +68,37 @@ export const Transactions: React.FC = () => {
   const updateMutation = usePatchApiTransactionId();
   const deleteMutation = useDeleteApiTransactionId();
 
-  const transactions = (Array.isArray(transactionsQuery.data?.data)
+  const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
     ? transactionsQuery.data!.data
+    : Array.isArray((transactionsQuery.data as any)?.items)
+    ? (transactionsQuery.data as any).items
     : Array.isArray(transactionsQuery.data)
     ? transactionsQuery.data
     : []) as any[];
+
+  // Client-side filter by type (backend may not support it reliably)
+  const transactions = rawTransactions
+    .filter((t: any) =>
+      !filters.TransactionTypeId ||
+      Number(t.transactionType?.id) === Number(filters.TransactionTypeId)
+    )
+    // Client-side sort by full datetime
+    .sort((a: any, b: any) => {
+      if (filters.SortBy === 'Amount') {
+        return filters.SortDescending
+          ? (b.amount ?? 0) - (a.amount ?? 0)
+          : (a.amount ?? 0) - (b.amount ?? 0);
+      }
+      const da = new Date(a.date ?? 0).getTime();
+      const db = new Date(b.date ?? 0).getTime();
+      return filters.SortDescending ? db - da : da - db;
+    });
   const categories = (Array.isArray(categoriesQuery.data) ? categoriesQuery.data : []) as any[];
   const sources = (Array.isArray(sourcesQuery.data) ? sourcesQuery.data : []) as any[];
   const types = (Array.isArray(typesQuery.data) ? typesQuery.data : []) as any[];
 
   const isLoading = transactionsQuery.isLoading || categoriesQuery.isLoading || sourcesQuery.isLoading || typesQuery.isLoading;
+  const isFiltering = transactionsQuery.isFetching && !transactionsQuery.isLoading;
 
   const invalidateTransactions = () => {
     queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
@@ -92,7 +116,7 @@ export const Transactions: React.FC = () => {
     setCreateErrors({});
     setFormData({
       amount: '',
-      date: new Date().toISOString().split('T')[0],
+      date: getLocalDatetime(),
       sourceId: '',
       transactionTypeId: '',
       categoryId: '',
@@ -105,7 +129,7 @@ export const Transactions: React.FC = () => {
     setEditingTransaction(transaction);
     setFormData({
       amount: String(transaction.amount ?? ''),
-      date: transaction.date?.split('T')[0] || '',
+      date: getLocalDatetime(transaction.date),
       sourceId: String(transaction.source?.id ?? ''),
       transactionTypeId: String(transaction.transactionType?.id ?? ''),
       categoryId: String(transaction.category?.id ?? ''),
@@ -146,7 +170,7 @@ export const Transactions: React.FC = () => {
         },
       });
       setIsCreateModalOpen(false);
-      setFormData({ amount: '', date: new Date().toISOString().split('T')[0], sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+      setFormData({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
       setCreateErrors({});
       invalidateTransactions();
     } catch (error: any) {
@@ -188,14 +212,19 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    if (confirm('Ви впевнені, що хочете видалити цю транзакцію?')) {
-      try {
-        await deleteMutation.mutateAsync({ id });
-        invalidateTransactions();
-      } catch (error) {
-        console.error('Error deleting transaction:', error);
-      }
+  const handleDelete = (id: number) => {
+    setTransactionToDelete(id);
+  };
+
+  const confirmDelete = async () => {
+    if (!transactionToDelete) return;
+    try {
+      await deleteMutation.mutateAsync({ id: transactionToDelete });
+      invalidateTransactions();
+    } catch (error) {
+      console.error('Error deleting transaction:', error);
+    } finally {
+      setTransactionToDelete(null);
     }
   };
 
@@ -278,7 +307,8 @@ export const Transactions: React.FC = () => {
       <div>
         <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
         <input
-          type="date"
+          type="datetime-local"
+          step="1"
           value={formData.date}
           onChange={(e) => {
             setFormData({ ...formData, date: e.target.value });
@@ -356,7 +386,7 @@ export const Transactions: React.FC = () => {
       <DashboardSection
         title="Транзакції"
         action={
-          <div className="flex gap-2">
+          <div className="flex gap-2 flex-wrap justify-end">
             <Button variant="secondary" onClick={clearFilters} type="button">
               Скинути фільтри
             </Button>
@@ -371,20 +401,33 @@ export const Transactions: React.FC = () => {
           onClearFilters={clearFilters}
         />
 
-        {/* Table */}
-        {transactions.length > 0 ? (
-          <TransactionTable
-            transactions={transactions as any}
-            onEdit={handleEditOpen}
-            onDelete={handleDelete}
-          />
-        ) : (
-          <EmptyState
-            title="Немає транзакцій"
-            description="Поки що тут порожньо. Додайте першу транзакцію, щоб отримати аналітику по доходах і витратах."
-            action={<Button onClick={handleCreateOpen}>+ Нова транзакція</Button>}
-          />
-        )}
+        {/* Table with loading overlay */}
+        <div className="relative">
+          {isFiltering && (
+            <div className="absolute inset-0 bg-white/60 z-10 flex items-center justify-center rounded-xl">
+              <div className="flex items-center gap-2 text-sm text-primary font-medium bg-white px-4 py-2 rounded-full shadow-sm border border-primary/20">
+                <svg className="animate-spin h-4 w-4" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="3" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z" />
+                </svg>
+                Фільтрується...
+              </div>
+            </div>
+          )}
+          {transactions.length > 0 ? (
+            <TransactionTable
+              transactions={transactions as any}
+              onEdit={handleEditOpen}
+              onDelete={handleDelete}
+            />
+          ) : (
+            <EmptyState
+              title="Немає транзакцій"
+              description="Поки що тут порожньо. Додайте першу транзакцію, щоб отримати аналітику по доходах і витратах."
+              action={<Button onClick={handleCreateOpen}>+ Нова транзакція</Button>}
+            />
+          )}
+        </div>
 
         {transactions.length > 0 && (
           <p className="text-xs text-[#7a7a7a] mt-4">
@@ -426,6 +469,14 @@ export const Transactions: React.FC = () => {
           })}
         </form>
       </Modal>
+
+      <ConfirmModal
+        isOpen={transactionToDelete !== null}
+        title="Видалення транзакції"
+        message="Ви впевнені, що хочете видалити цю транзакцію? Цю дію неможливо скасувати."
+        onConfirm={confirmDelete}
+        onCancel={() => setTransactionToDelete(null)}
+      />
     </div>
   );
 };

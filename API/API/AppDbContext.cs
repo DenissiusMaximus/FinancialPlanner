@@ -49,7 +49,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 4)");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.Currency).WithMany(p => p.Aims)
                 .HasForeignKey(d => d.CurrencyId)
@@ -68,7 +68,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.ExpiryDate).HasColumnType("datetime");
             entity.Property(e => e.Jti)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
         });
 
         modelBuilder.Entity<Category>(entity =>
@@ -77,7 +77,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.User).WithMany(p => p.Categories)
                 .HasForeignKey(d => d.UserId)
@@ -91,7 +91,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.UsdExchangeRate).HasColumnType("decimal(18, 4)");
         });
 
@@ -101,7 +101,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.IntervalUnitNavigation).WithMany(p => p.Frequencies)
                 .HasForeignKey(d => d.IntervalUnitId)
@@ -120,7 +120,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Id).HasColumnName("id");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false)
+                .IsUnicode(true)
                 .HasColumnName("name");
         });
 
@@ -131,7 +131,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 4)");
             entity.Property(e => e.Name)
                 .HasMaxLength(555)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.Category).WithMany(p => p.PlannedTransactions)
                 .HasForeignKey(d => d.CategoryId)
@@ -171,7 +171,7 @@ public partial class AppDbContext : DbContext
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 4)");
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
 
             entity.HasOne(d => d.Currency).WithMany(p => p.Sources)
                 .HasForeignKey(d => d.CurrencyId)
@@ -204,7 +204,7 @@ public partial class AppDbContext : DbContext
             entity.HasKey(e => e.Id).HasName("PK__Transact__3214EC0728D92CEC");
 
             entity.Property(e => e.Amount).HasColumnType("decimal(18, 4)");
-            entity.Property(e => e.Comment).IsUnicode(false);
+            entity.Property(e => e.Comment).IsUnicode(true);
 
             entity.HasOne(d => d.Category).WithMany(p => p.Transactions)
                 .HasForeignKey(d => d.CategoryId)
@@ -241,7 +241,7 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
         });
 
         modelBuilder.Entity<User>(entity =>
@@ -252,13 +252,13 @@ public partial class AppDbContext : DbContext
 
             entity.Property(e => e.Email)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.Name)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
             entity.Property(e => e.PasswordHash)
                 .HasMaxLength(255)
-                .IsUnicode(false);
+                .IsUnicode(true);
         });
 
         OnModelCreatingPartial(modelBuilder);

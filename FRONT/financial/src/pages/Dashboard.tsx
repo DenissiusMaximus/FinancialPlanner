@@ -25,6 +25,7 @@ import { AIMS_PREVIEW_COUNT, TRANSACTIONS_PREVIEW_COUNT } from '../utils/constan
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
 import { useUIStore } from '../store/uiStore';
 import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { getLocalDatetime } from '../utils/formatters';
 
 
 export const Dashboard: React.FC = () => {
@@ -44,7 +45,7 @@ export const Dashboard: React.FC = () => {
     comment: string;
   }>({
     amount: '',
-    date: new Date().toISOString().split('T')[0],
+    date: getLocalDatetime(),
     sourceId: '',
     transactionTypeId: '',
     categoryId: '',
@@ -153,7 +154,7 @@ export const Dashboard: React.FC = () => {
         },
       });
       setIsCreateTxOpen(false);
-      setTxForm({ amount: '', date: new Date().toISOString().split('T')[0], sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+      setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
       setTxErrors({});
       queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
       queryClient.invalidateQueries({ queryKey: ['/api/Source'] });
@@ -209,7 +210,7 @@ export const Dashboard: React.FC = () => {
             style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
           >
             {/* Total Card */}
-            <div className="bg-gradient-to-br from-surface-tile-1 to-ink text-white rounded-2xl p-6 shadow-xl flex flex-col justify-between min-w-[280px] w-[280px] shrink-0 snap-start">
+            <div className="bg-gradient-to-br from-surface-tile-1 to-ink text-white rounded-2xl p-5 shadow-xl flex flex-col justify-between min-w-[240px] w-[240px] sm:min-w-[280px] sm:w-[280px] shrink-0 snap-start">
               <div className="flex justify-between items-center mb-4">
                 <span className="text-sm font-medium opacity-80">Загальна сума</span>
                 <span className="bg-white/10 text-white border border-white/20 px-2 py-1 rounded text-xs font-semibold">
@@ -227,7 +228,7 @@ export const Dashboard: React.FC = () => {
 
             {/* Source Cards */}
             {sources.map((source) => (
-              <div key={source.id} className="snap-start shrink-0 min-w-[280px] w-[280px] flex items-stretch">
+              <div key={source.id} className="snap-start shrink-0 min-w-[240px] w-[240px] sm:min-w-[280px] sm:w-[280px] flex items-stretch">
                 <div className="w-full h-full" onClick={() => handleOpenCreateTxFromSource(source.id)}>
                   <SourceCard
                     source={source as any}
@@ -279,33 +280,35 @@ export const Dashboard: React.FC = () => {
         action={<Button onClick={() => navigate('/aims')}>Відкрити цілі</Button>}
       >
         <div className="flex flex-col gap-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
             {aims.slice(0, AIMS_PREVIEW_COUNT).map((aim) => (
               <div
                 key={aim.id}
                 className="cursor-pointer"
                 onClick={() => navigate(`/aims?editId=${aim.id}`)}
               >
-                <AimProgressCard aim={aim} />
+                <AimProgressCard aim={aim as any} isDraggable={false} />
               </div>
             ))}
           </div>
 
           {/* Total Progress */}
           {aims.length > 0 && (
-            <div className="bg-white border border-hairline rounded-lg p-5 flex items-center gap-4">
-              <span className="text-sm font-semibold text-ink min-w-[180px]">
+            <div className="bg-white border border-hairline rounded-lg p-4 flex flex-col sm:flex-row sm:items-center gap-3">
+              <span className="text-sm font-semibold text-ink sm:min-w-[180px]">
                 Загальний прогрес по всім цілям
               </span>
-              <div className="flex-1 h-1.5 bg-hairline rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-gradient-to-r from-primary to-primary-focus transition-all duration-300"
-                  style={{ width: `${Math.min(totalAimsProgress, 100)}%` }}
-                />
+              <div className="flex-1 flex items-center gap-3">
+                <div className="flex-1 h-1.5 bg-hairline rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-gradient-to-r from-primary to-primary-focus transition-all duration-300"
+                    style={{ width: `${Math.min(totalAimsProgress, 100)}%` }}
+                  />
+                </div>
+                <span className="text-sm font-semibold text-primary shrink-0">
+                  {totalAimsProgress.toFixed(1)}%
+                </span>
               </div>
-              <span className="text-sm font-semibold text-primary min-w-[50px] text-right">
-                {totalAimsProgress.toFixed(1)}%
-              </span>
             </div>
           )}
 
@@ -318,7 +321,7 @@ export const Dashboard: React.FC = () => {
                   className="cursor-pointer"
                   onClick={() => navigate(`/aims?editId=${aim.id}`)}
                 >
-                  <AimProgressCard aim={aim} />
+                  <AimProgressCard aim={aim} isDraggable={false} />
                 </div>
               ))}
             </div>
@@ -351,7 +354,7 @@ export const Dashboard: React.FC = () => {
               onClick={() => {
                 setTxForm({
                   amount: '',
-                  date: new Date().toISOString().split('T')[0],
+                  date: getLocalDatetime(),
                   sourceId: '',
                   transactionTypeId: '',
                   categoryId: '',
@@ -427,7 +430,8 @@ export const Dashboard: React.FC = () => {
           <div>
             <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
             <input
-              type="date"
+              type="datetime-local"
+              step="1"
               value={txForm.date}
               onChange={(e) => setTxForm({ ...txForm, date: e.target.value })}
               className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"

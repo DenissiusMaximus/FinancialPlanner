@@ -10,7 +10,7 @@ public partial class PlannedTransactionDto
 
     public decimal Amount { get; set; }
 
-    public DateOnly StartDate { get; set; }
+    public DateTime StartDate { get; set; }
 
     public int UserId { get; set; }
 
