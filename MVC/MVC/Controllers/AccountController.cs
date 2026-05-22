@@ -1,6 +1,11 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Security.Claims;
+using API;
+using API.Models;
+using API.Utils;
 using MVC.Models.ViewModels;
 
 namespace MVC.Controllers
@@ -10,14 +15,20 @@ namespace MVC.Controllers
         private readonly UserManager<IdentityUser> _userManager;
         private readonly SignInManager<IdentityUser> _signInManager;
         private readonly RoleManager<IdentityRole> _roleManager;
+        private readonly AppDbContext _appDbContext;
+        private readonly API.Utils.IPasswordHasher _passwordHasher;
 
         public AccountController(UserManager<IdentityUser> userManager,
                                  SignInManager<IdentityUser> signInManager,
-                                 RoleManager<IdentityRole> roleManager)
+                                 RoleManager<IdentityRole> roleManager,
+                                 AppDbContext appDbContext,
+                                 API.Utils.IPasswordHasher passwordHasher)
         {
             _userManager = userManager;
             _signInManager = signInManager;
             _roleManager = roleManager;
+            _appDbContext = appDbContext;
+            _passwordHasher = passwordHasher;
         }
 
         [AllowAnonymous]
@@ -47,8 +58,11 @@ namespace MVC.Controllers
                     // Призначення обраної ролі користувачу
                     await _userManager.AddToRoleAsync(user, model.Role);
 
+                    var appUserId = await EnsureDomainUserAsync(model.Email, model.Password);
+
                     // Автоматичний вхід після реєстрації
-                    await _signInManager.SignInAsync(user, isPersistent: false);
+                    await _signInManager.SignInWithClaimsAsync(user, isPersistent: false,
+                        [new Claim("app_user_id", appUserId.ToString())]);
                     return RedirectToAction("Index", "Home");
                 }
 
@@ -80,6 +94,13 @@ namespace MVC.Controllers
                     var result = await _signInManager.PasswordSignInAsync(user, model.Password, isPersistent: false, lockoutOnFailure: false);
                     if (result.Succeeded)
                     {
+                        var appUserId = await EnsureDomainUserAsync(model.Email, model.Password);
+
+                        // Re-issue cookie with domain user id claim required by domain services.
+                        await _signInManager.SignOutAsync();
+                        await _signInManager.SignInWithClaimsAsync(user, isPersistent: false,
+                            [new Claim("app_user_id", appUserId.ToString())]);
+
                         return Redirect(model.ReturnUrl ?? "/");
                     }
                 }
@@ -152,6 +173,32 @@ namespace MVC.Controllers
 
             model.Roles = await _userManager.GetRolesAsync(user);
             return View(model);
+        }
+
+        private async Task<int> EnsureDomainUserAsync(string email, string password)
+        {
+            var existingUserId = await _appDbContext.Users
+                .AsNoTracking()
+                .Where(u => u.Email == email)
+                .Select(u => (int?)u.Id)
+                .FirstOrDefaultAsync();
+
+            if (existingUserId.HasValue)
+            {
+                return existingUserId.Value;
+            }
+
+            var domainUser = new User
+            {
+                Name = email,
+                Email = email,
+                PasswordHash = _passwordHasher.HashPassword(password)
+            };
+
+            _appDbContext.Users.Add(domainUser);
+            await _appDbContext.SaveChangesAsync();
+
+            return domainUser.Id;
         }
     }
 }

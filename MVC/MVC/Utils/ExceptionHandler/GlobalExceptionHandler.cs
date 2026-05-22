@@ -10,11 +10,20 @@ public class GlobalExceptionHandler(ILogger<GlobalExceptionHandler> logger) : IE
 
         var response = httpContext.Response;
         response.ContentType = "application/json";
-        response.StatusCode = StatusCodes.Status500InternalServerError;
+
+        var statusCode = exception is UnauthorizedAccessException
+            ? StatusCodes.Status401Unauthorized
+            : StatusCodes.Status500InternalServerError;
+
+        response.StatusCode = statusCode;
+
+        var message = statusCode == StatusCodes.Status401Unauthorized
+            ? "Unauthorized. Please sign in."
+            : "An unexpected error occurred.";
 
         await response.WriteAsJsonAsync(new
         {
-            error = "An unexpected error occurred."
+            error = message
         }, cancellationToken);
 
         return true;

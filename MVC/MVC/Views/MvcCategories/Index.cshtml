@@ -1,6 +1,9 @@
 @model IEnumerable<API.Models.Category>
 @{ ViewData["Title"] = "Categories (Lab 4)"; }
 <h1>Categories</h1>
+<div id="categories-live-status" class="alert alert-info py-2">
+    Real-time updates are enabled for this list.
+</div>
 <p><a asp-action="Create" class="btn btn-primary">Create New</a></p>
 <table class="table">
     <thead>
@@ -22,3 +25,34 @@
         }
     </tbody>
 </table>
+
+@section Scripts {
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.0/signalr.min.js"></script>
+    <script>
+        (function () {
+            const status = document.getElementById('categories-live-status');
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl('/hubs/categories')
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on('CategoriesChanged', function (message) {
+                if (status) {
+                    status.className = 'alert alert-success py-2';
+                    status.textContent = message;
+                }
+
+                window.setTimeout(function () {
+                    window.location.reload();
+                }, 500);
+            });
+
+            connection.start().catch(function () {
+                if (status) {
+                    status.className = 'alert alert-warning py-2';
+                    status.textContent = 'Real-time updates are unavailable right now.';
+                }
+            });
+        })();
+    </script>
+}

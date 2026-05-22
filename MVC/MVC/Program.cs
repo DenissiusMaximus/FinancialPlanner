@@ -16,6 +16,7 @@ using API.Services.PlannedTransaction;
 using API.Services.Source;
 using API.Services.Transaction;
 using API.Services.User;
+using API.Hubs;
 using API.Utils;
 using API.Utils.ExceptionHandler;
 using API.Utils.JwtProvider;
@@ -38,10 +39,14 @@ MapConfig.Configure();
 
 
 builder.Services.AddDbContext<AppDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("DefaultConnection"),
+        sqlOptions => sqlOptions.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)));
 
 builder.Services.AddDbContext<AppIdentityDbContext>(options =>
-    options.UseSqlServer(builder.Configuration.GetConnectionString("IdentityConnection")));
+    options.UseSqlServer(
+        builder.Configuration.GetConnectionString("IdentityConnection"),
+        sqlOptions => sqlOptions.MigrationsAssembly(typeof(Program).Assembly.GetName().Name)));
 
 builder.Services.AddIdentity<IdentityUser, IdentityRole>(options =>
     {
@@ -88,6 +93,7 @@ builder.Services.AddScoped<NotificationContext>();
 builder.Services.AddScoped<ICurrentUserContext, CurrentUserContext>();
 
 builder.Services.AddControllersWithViews(options => { options.Filters.Add<NotificationFilter>(); });
+builder.Services.AddSignalR();
 
 builder.Services.AddEndpointsApiExplorer();
 
@@ -153,6 +159,7 @@ app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
 app.MapControllers();
+app.MapHub<CategoriesHub>("/hubs/categories");
 
 app.Map("/ui", () => Results.Redirect("/swagger/index.html"));
 
