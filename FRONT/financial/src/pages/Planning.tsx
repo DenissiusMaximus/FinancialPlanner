@@ -42,9 +42,7 @@ export const Planning: React.FC = () => {
 
     const now = new Date();
     const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
-    const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-    const daysRemainingInMonth = (endOfCurrentMonth.getDate() - now.getDate()) + 1;
+    // removed unused intermediate day counters
 
     // Convert frequency to daily rate using basic unit lengths and intervalValue.
     // Units: day=1, week=7, month=30, year=365. intervalValue multiplies the unit.
