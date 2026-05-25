@@ -202,10 +202,16 @@ export const Planning: React.FC = () => {
     }
 
     // Map results back to aims
+    const now = new Date();
     return remainingMap.map((r) => {
       const willAchieveInForecast = r.remaining <= 0;
-      const achievementDate = new Date();
-      achievementDate.setMonth(achievementDate.getMonth() + (r.achievedMonth ?? monthsToForecast));
+      // determine which month index to show (if achieved within forecast, show that month; otherwise show last forecast month)
+      const showIndex = r.achievedMonth !== null && r.achievedMonth !== undefined ? r.achievedMonth : Math.max(0, monthsToForecast - 1);
+      const totalMonthsFromNow = now.getMonth() + showIndex;
+      const showYear = now.getFullYear() + Math.floor(totalMonthsFromNow / 12);
+      const showMonth = totalMonthsFromNow % 12;
+      // last day of that month
+      const achievementDate = new Date(showYear, showMonth + 1, 0);
       return {
         ...r.aim,
         target: r.target,
@@ -214,7 +220,7 @@ export const Planning: React.FC = () => {
         forecastedAdditionalCollection: r.allocated,
         willAchieveInForecast,
         willBeAchievedInMonth: r.achievedMonth ?? -1,
-        achievementDateStr: achievementDate.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }),
+        achievementDateStr: achievementDate.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' }),
         newTotalCollected: r.collected + r.allocated,
         newProgressPercentage: Math.min(((r.collected + r.allocated) / r.target) * 100, 100),
       };
@@ -222,9 +228,9 @@ export const Planning: React.FC = () => {
   }, [aims, monthsSavings, monthsToForecast, convert, selectedCurrencyName, periodSavings]);
 
   const targetDate = useMemo(() => {
-    const d = new Date();
-    d.setMonth(d.getMonth() + monthsToForecast);
-    return d.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+    const now = new Date();
+    const end = new Date(now.getFullYear(), now.getMonth() + monthsToForecast, 0); // last day of the final month in horizon
+    return end.toLocaleDateString('uk-UA', { day: 'numeric', month: 'long', year: 'numeric' });
   }, [monthsToForecast]);
 
   if (isLoading) {
@@ -338,12 +344,12 @@ export const Planning: React.FC = () => {
                           {aim.willAchieveInForecast ? (
                             <div className="flex items-center gap-2 text-green-700 bg-green-50 px-3 py-1.5 rounded-lg border border-green-200">
                               <CheckCircle2 size={16} />
-                              <span className="text-sm font-semibold">Досягнуто у {aim.achievementDateStr}</span>
+                              <span className="text-sm font-semibold">Досягнуто до {aim.achievementDateStr}</span>
                             </div>
                           ) : (
                             <div className="flex items-center gap-2 text-primary bg-primary/10 px-3 py-1.5 rounded-lg border border-primary/20">
                               <Calendar size={16} />
-                              <span className="text-sm font-semibold">Очікується у {aim.achievementDateStr}</span>
+                              <span className="text-sm font-semibold">Очікується до {aim.achievementDateStr}</span>
                             </div>
                           )}
                         </div>
