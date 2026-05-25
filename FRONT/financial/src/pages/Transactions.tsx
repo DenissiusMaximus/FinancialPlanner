@@ -17,6 +17,7 @@ import {
   useGetApiTransactionType,
 } from '../api/generated/endpoints';
 import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { TransactionTypeEnum } from '../types/enums';
 import { getLocalDatetime } from '../utils/formatters';
 
 export const Transactions: React.FC = () => {
@@ -133,7 +134,14 @@ export const Transactions: React.FC = () => {
     if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Сума має бути більшою за 0';
 
     const selectedType = types.find(t => String(t.id) === String(formData.transactionTypeId));
-    const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+    const transferType = types.find(t => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
+    const isTransfer = Boolean(
+      selectedType && (
+        String(selectedType.id) === String(transferType?.id) ||
+        (selectedType?.name || '').toString().toLowerCase().includes('transfer') ||
+        (selectedType?.name || '').toString().toLowerCase().includes('переказ')
+      )
+    );
     if (isTransfer && !formData.destinationSourceId) {
       errors.destinationSourceId = 'Оберіть місце призначення переказу';
     }
@@ -302,7 +310,14 @@ export const Transactions: React.FC = () => {
       {/* Destination select for transfers */}
       {(() => {
         const selectedType = types.find((t: any) => String(t.id) === String(formData.transactionTypeId));
-        const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+        const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
+        const isTransfer = Boolean(
+          selectedType && (
+            String(selectedType.id) === String(transferType?.id) ||
+            (selectedType?.name || '').toString().toLowerCase().includes('transfer') ||
+            (selectedType?.name || '').toString().toLowerCase().includes('переказ')
+          )
+        );
         if (!isTransfer) return null;
         return (
           <div>
