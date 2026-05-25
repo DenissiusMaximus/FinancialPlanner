@@ -132,9 +132,7 @@ export const Planning: React.FC = () => {
       }
     });
 
-    const monthsSavingsArr = months.map((m) => m * -1); // placeholder: we'll compute net later
-    // Actually compute net per month (income - expense): we built months as net already (we added both incomes and expenses together?), above we only added monthly into months regardless of sign. Need to recalc months net properly.
-    // To simplify, rebuild monthsNet by iterating planned and adding positive for income, negative for expense.
+    // Rebuild monthsNet by iterating planned and adding positive for income, negative for expense.
     const monthsNet = new Array(monthsToForecast).fill(0);
     planned.forEach((p) => {
       const typeName = p.transactionType?.name;
@@ -206,7 +204,6 @@ export const Planning: React.FC = () => {
     // Map results back to aims
     return remainingMap.map((r) => {
       const willAchieveInForecast = r.remaining <= 0;
-      const monthsUntil = r.achievedMonth ?? Math.ceil(monthsToForecast + 0);
       const achievementDate = new Date();
       achievementDate.setMonth(achievementDate.getMonth() + (r.achievedMonth ?? monthsToForecast));
       return {
