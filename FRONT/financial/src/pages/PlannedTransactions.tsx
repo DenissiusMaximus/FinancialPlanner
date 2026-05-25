@@ -13,7 +13,7 @@ import type {
   CreatePlannedTransactionInput,
   FrequencyDto,
 } from '../types/generated';
-import { getTransactionTypeLabel, getFrequencyLabel } from '../utils/display-helpers';
+import { getTransactionTypeLabel, getFrequencyLabel, isIncomeType, isExpenseType } from '../utils/display-helpers';
 
 const PLANNED_TX_KEY = ['/api/PlannedTransaction'];
 const FREQUENCY_KEY = ['/api/Frequency'];
@@ -128,6 +128,12 @@ export const PlannedTransactions: React.FC = () => {
   
   const typesRaw = typesQuery.data as any;
   const types = (Array.isArray(typesRaw?.data) ? typesRaw.data : Array.isArray(typesRaw) ? typesRaw : []) as any[];
+
+  // Only allow income/expense types in create/edit forms
+  const allowedTypes = types.filter((t: any) => {
+    const n = (t?.name || '').toString();
+    return isIncomeType(n) || isExpenseType(n);
+  });
   
   const currenciesRaw = currenciesQuery.data as any;
   const currencies = (Array.isArray(currenciesRaw?.data) ? currenciesRaw.data : Array.isArray(currenciesRaw) ? currenciesRaw : []) as any[];
@@ -309,7 +315,7 @@ export const PlannedTransactions: React.FC = () => {
           className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
         >
           <option value="">Виберіть тип</option>
-          {types.map((t: any) => <option key={t.id} value={t.id}>{getTransactionTypeLabel(t.name).label}</option>)}
+          {allowedTypes.map((t: any) => <option key={t.id} value={t.id}>{getTransactionTypeLabel(t.name).label}</option>)}
         </select>
         {errors.transactionTypeId && <p className="mt-1 text-xs text-red-500">{errors.transactionTypeId}</p>}
       </div>

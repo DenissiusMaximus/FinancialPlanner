@@ -45,7 +45,24 @@ export const Planning: React.FC = () => {
       const amount = convert(p.amount || 0, p.currency);
       let multiplier = 1;
 
-      if (p.frequency) {
+      // Detect one-time frequencies. The backend/settings may store one-time as a very large
+      // interval (e.g. intervalValue=9999) or with a name containing 'one'/'одно'. In that case
+      // include the transaction only in the month of its `startDate` (multiplier=1) and ignore
+      // it for other months (multiplier=0). Otherwise, convert frequency to monthly equivalent.
+      const isOneTimeFrequency =
+        !p.frequency ||
+        (!!p.frequency.intervalValue && p.frequency.intervalValue >= 9999) ||
+        (p.frequency.name && /one|одно|однораз|once/i.test(p.frequency.name));
+
+      if (isOneTimeFrequency) {
+        if (p.startDate) {
+          const start = new Date(p.startDate);
+          const now = new Date();
+          multiplier = start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth() ? 1 : 0;
+        } else {
+          multiplier = 0;
+        }
+      } else if (p.frequency) {
         const unit = (p.frequency.intervalUnit?.name || '').toLowerCase();
         const val = p.frequency.intervalValue || 1;
 
