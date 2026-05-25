@@ -120,15 +120,15 @@ export const Dashboard: React.FC = () => {
   };
 
   const handleOpenCreateTxFromSource = (sourceId: number) => {
-    const incomeType = types.find((t: any) => {
+    const adjustmentType = types.find((t: any) => {
       const name = String(t?.name ?? '').toLowerCase();
-      return name === 'income' || name === 'надходження' || name === 'поповнення' || name === 'дохід';
+      return name === 'adjustment' || name === 'уточнення' || name.includes('adjust') || name.includes('уточн');
     });
 
     setTxForm((prev) => ({
       ...prev,
       sourceId: String(sourceId),
-      transactionTypeId: incomeType ? String(incomeType.id) : prev.transactionTypeId,
+      transactionTypeId: adjustmentType ? String(adjustmentType.id) : prev.transactionTypeId,
       destinationSourceId: undefined,
     }));
     setTxErrors((prev) => ({ ...prev, sourceId: undefined, transactionTypeId: undefined }));
@@ -382,25 +382,7 @@ export const Dashboard: React.FC = () => {
             >
               + Транзакція
             </Button>
-              <Button
-                onClick={() => {
-                  const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
-                  setTxForm({
-                    amount: '',
-                    date: getLocalDatetime(),
-                    sourceId: '',
-                    transactionTypeId: transferType ? String(transferType.id) : '',
-                    categoryId: '',
-                    comment: '',
-                    destinationSourceId: undefined,
-                  });
-                  setTxErrors({});
-                  setIsCreateTxOpen(true);
-                }}
-                variant="secondary"
-              >
-                + Переказ
-              </Button>
+              {/* Transfer creation removed per request */}
             <Button variant="secondary" onClick={() => navigate('/transactions')}>Всі транзакції</Button>
           </div>
         }
