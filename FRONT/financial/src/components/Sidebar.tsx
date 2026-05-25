@@ -78,7 +78,7 @@ export const Sidebar: React.FC = () => {
     { label: 'Джерела', path: '/sources', icon: <IconSources /> },
     { label: 'Цілі', path: '/aims', icon: <IconAims /> },
     { label: 'Транзакції', path: '/transactions', icon: <IconTransactions /> },
-    { label: 'Категорії', path: '/categories', icon: <IconCategories /> },
+    { label: 'Налаштування', path: '/settings', icon: <IconCategories /> },
     { label: 'Планові транзакції', path: '/planned-transactions', icon: <IconPlanned /> },
     { label: 'Планування', path: '/planning', icon: <IconPlanning /> },
     { label: 'Аналітика', path: '/analytics', icon: <IconAnalytics /> },

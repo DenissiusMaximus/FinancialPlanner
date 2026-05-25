@@ -6,7 +6,7 @@ import { Aims } from '../pages/Aims';
 import { Transactions } from '../pages/Transactions';
 import { PlannedTransactions } from '../pages/PlannedTransactions';
 import { Analytics } from '../pages/Analytics';
-import { Categories } from '../pages/Categories';
+import { Settings } from '../pages/Settings';
 import { Planning } from '../pages/Planning';
 import { Login } from '../pages/Login';
 import { useAuthStore } from '../store/authStore';
@@ -64,8 +64,8 @@ export const router = createBrowserRouter([
         element: <Analytics />,
       },
       {
-        path: 'categories',
-        element: <Categories />,
+        path: 'settings',
+        element: <Settings />,
       },
       {
         path: 'planning',
