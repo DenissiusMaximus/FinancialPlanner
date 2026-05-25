@@ -46,57 +46,72 @@ export const Planning: React.FC = () => {
     const daysRemainingInMonth = (endOfCurrentMonth.getDate() - now.getDate()) + 1;
     const fractionCurrentMonth = daysRemainingInMonth / daysInCurrentMonth;
 
-    const getMonthlyEquivalent = (p: PlannedTransactionDto) => {
+    // Convert frequency to daily rate using basic unit lengths and intervalValue.
+    // Units: day=1, week=7, month=30, year=365. intervalValue multiplies the unit.
+    const getDailyRate = (p: PlannedTransactionDto) => {
       const amount = convert(p.amount || 0, p.currency);
-      // determine one-time
       const isOneTime =
         !p.frequency ||
         (!!p.frequency.intervalValue && p.frequency.intervalValue >= 9999) ||
         (p.frequency?.name && /one|одно|однораз|once/i.test(p.frequency.name || ''));
 
-      if (isOneTime) return { monthly: 0, isOneTime: true, amount };
+      if (isOneTime) return { dailyRate: 0, isOneTime: true, amount };
 
-      if (p.frequency) {
-        const unit = (p.frequency.intervalUnit?.name || '').toLowerCase();
-        const val = p.frequency.intervalValue || 1;
-        let multiplier = 1;
-        if (unit.includes('day') || unit.includes('день') || unit.includes('щодня')) multiplier = 30 / val;
-        else if (unit.includes('week') || unit.includes('тиж') || unit.includes('щотижня')) multiplier = 4.33 / val;
-        else if (unit.includes('month') || unit.includes('місяц') || unit.includes('щомісяця')) multiplier = 1 / val;
-        else if (unit.includes('year') || unit.includes('рік') || unit.includes('щорічно')) multiplier = (1 / 12) / val;
-        return { monthly: amount * multiplier, isOneTime: false, amount };
-      }
+      const unitName = (p.frequency?.intervalUnit?.name || '').toString().toLowerCase();
+      const val = p.frequency?.intervalValue || 1;
+      let unitDays = 30; // default month
+      if (unitName.includes('day') || unitName.includes('день') || unitName.includes('щод')) unitDays = 1;
+      else if (unitName.includes('week') || unitName.includes('тиж')) unitDays = 7;
+      else if (unitName.includes('month') || unitName.includes('міся')) unitDays = 30;
+      else if (unitName.includes('year') || unitName.includes('рік') || unitName.includes('річ')) unitDays = 365;
 
-      return { monthly: 0, isOneTime: true, amount };
+      const intervalDays = unitDays * (val || 1);
+      const dailyRate = intervalDays > 0 ? amount / intervalDays : 0;
+      return { dailyRate, isOneTime: false, amount };
     };
 
-    // Build month-by-month amounts (income minus expense)
+    // Precompute days for each month in the horizon: month 0 uses remaining days, others full month days
+    const daysInMonths: number[] = [];
+    for (let i = 0; i < monthsToForecast; i++) {
+      const year = now.getFullYear() + Math.floor((now.getMonth() + i) / 12);
+      const month = (now.getMonth() + i) % 12;
+      const days = new Date(year, month + 1, 0).getDate();
+      if (i === 0) {
+        const daysRemaining = (new Date(year, month + 1, 0).getDate() - now.getDate()) + 1;
+        daysInMonths.push(daysRemaining);
+      } else {
+        daysInMonths.push(days);
+      }
+    }
+
+    // Build month-by-month net amounts using daily rates
     planned.forEach((p) => {
       const typeName = p.transactionType?.name;
-      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
+      const { dailyRate, isOneTime, amount } = getDailyRate(p);
+      const sign = isIncomeType(typeName) ? 1 : isExpenseType(typeName) ? -1 : 0;
 
-      if (!isOneTime) {
-        // Recurring: add prorated for current partial month, full for subsequent months
-        if (monthsToForecast > 0) months[0] += monthly * fractionCurrentMonth;
-        for (let i = 1; i < monthsToForecast; i++) months[i] += monthly;
+      if (!isOneTime && sign !== 0) {
+        // recurring: allocate dailyRate * daysInMonths[i]
+        let totalForPeriod = 0;
+        for (let i = 0; i < monthsToForecast; i++) {
+          const contrib = dailyRate * daysInMonths[i] * sign;
+          months[i] += contrib;
+          totalForPeriod += (dailyRate * daysInMonths[i]);
+        }
         if (isExpenseType(typeName)) {
           const catName = p.category?.name || 'Без категорії';
-          const totalForPeriod = monthly * (fractionCurrentMonth + Math.max(0, monthsToForecast - 1));
           catMap[catName] = (catMap[catName] || 0) + totalForPeriod;
         }
-      } else {
-        // One-time: place full amount into its month if within forecast
+      } else if (isOneTime) {
         if (!p.startDate) return;
         const start = new Date(p.startDate);
         // if start is earlier than today and within current month but before now, skip
         if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) {
           return;
         }
-        // compute month index relative to now
         const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
         if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
-        // If in current month and date is within remaining days — include in month 0 fully
-        months[monthIndex] += amount;
+        months[monthIndex] += amount * sign;
         if (isExpenseType(typeName)) {
           const catName = p.category?.name || 'Без категорії';
           catMap[catName] = (catMap[catName] || 0) + amount;
@@ -104,54 +119,8 @@ export const Planning: React.FC = () => {
       }
     });
 
-    // Now compute totals: we must separate income and expense contributions for period totals
-    let periodInc = 0;
-    let periodExp = 0;
-    // Recompute by iterating planned again to attribute to inc/exp across months similar to above
-    planned.forEach((p) => {
-      const typeName = p.transactionType?.name;
-      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
-      if (!isOneTime) {
-        // recurring
-        if (monthsToForecast > 0) {
-          const first = monthly * fractionCurrentMonth;
-          periodInc += isIncomeType(typeName) ? first : 0;
-          periodExp += isExpenseType(typeName) ? first : 0;
-        }
-        const rest = monthly * Math.max(0, monthsToForecast - 1);
-        periodInc += isIncomeType(typeName) ? rest : 0;
-        periodExp += isExpenseType(typeName) ? rest : 0;
-      } else {
-        if (!p.startDate) return;
-        const start = new Date(p.startDate);
-        if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) return;
-        const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
-        if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
-        periodInc += isIncomeType(typeName) ? amount : 0;
-        periodExp += isExpenseType(typeName) ? amount : 0;
-      }
-    });
-
-    // Rebuild monthsNet by iterating planned and adding positive for income, negative for expense.
-    const monthsNet = new Array(monthsToForecast).fill(0);
-    planned.forEach((p) => {
-      const typeName = p.transactionType?.name;
-      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
-      const sign = isIncomeType(typeName) ? 1 : isExpenseType(typeName) ? -1 : 0;
-      if (sign === 0) return;
-      if (!isOneTime) {
-        if (monthsToForecast > 0) monthsNet[0] += monthly * fractionCurrentMonth * sign;
-        for (let i = 1; i < monthsToForecast; i++) monthsNet[i] += monthly * sign;
-      } else {
-        if (!p.startDate) return;
-        const start = new Date(p.startDate);
-        if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) return;
-        const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
-        if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
-        monthsNet[monthIndex] += amount * sign;
-      }
-    });
-
+    // months currently holds net contributions per month (positive income, negative expenses)
+    const monthsNet = months;
     const periodIncFinal = monthsNet.reduce((s, v) => s + (v > 0 ? v : 0), 0);
     const periodExpFinal = monthsNet.reduce((s, v) => s + (v < 0 ? -v : 0), 0);
     const periodSavingsFinal = periodIncFinal - periodExpFinal;
