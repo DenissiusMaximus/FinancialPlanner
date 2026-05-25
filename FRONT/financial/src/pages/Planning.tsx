@@ -36,7 +36,7 @@ export const Planning: React.FC = () => {
   ) as PlannedTransactionDto[];
 
   // 1. Calculate per-month equivalents and per-period totals
-  const { monthsSavings, periodIncome, periodExpense, periodSavings, expenseByCategory } = useMemo(() => {
+  const { monthsSavings, periodIncome, periodExpense, periodSavings, expenseByCategory, debugDetails } = useMemo(() => {
     const months: number[] = new Array(monthsToForecast).fill(0);
     const catMap: Record<string, number> = {};
 
@@ -82,10 +82,12 @@ export const Planning: React.FC = () => {
       }
     }
 
+    const debugArr: any[] = [];
     // Build month-by-month net amounts using daily rates
     planned.forEach((p) => {
       const typeName = p.transactionType?.name;
       const { dailyRate, isOneTime, amount } = getDailyRate(p);
+      const perMonthContribs: number[] = new Array(monthsToForecast).fill(0);
       const sign = isIncomeType(typeName) ? 1 : isExpenseType(typeName) ? -1 : 0;
 
       if (!isOneTime && sign !== 0) {
@@ -94,12 +96,26 @@ export const Planning: React.FC = () => {
         for (let i = 0; i < monthsToForecast; i++) {
           const contrib = dailyRate * daysInMonths[i] * sign;
           months[i] += contrib;
+          perMonthContribs[i] = contrib;
           totalForPeriod += (dailyRate * daysInMonths[i]);
         }
         if (isExpenseType(typeName)) {
           const catName = p.category?.name || 'Без категорії';
           catMap[catName] = (catMap[catName] || 0) + totalForPeriod;
         }
+        debugArr.push({
+          id: p.id,
+          name: p.name,
+          type: typeName,
+          amount: amount,
+          currency: p.currency,
+          isOneTime: false,
+          dailyRate,
+          perMonthContribs,
+          totalForPeriod,
+          frequency: p.frequency?.name || `${p.frequency?.intervalValue} x ${p.frequency?.intervalUnit?.name}`,
+          startDate: p.startDate,
+        });
       } else if (isOneTime) {
         if (!p.startDate) return;
         const start = new Date(p.startDate);
@@ -110,6 +126,20 @@ export const Planning: React.FC = () => {
         const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
         if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
         months[monthIndex] += amount * sign;
+        perMonthContribs[monthIndex] = amount * sign;
+        debugArr.push({
+          id: p.id,
+          name: p.name,
+          type: typeName,
+          amount: amount,
+          currency: p.currency,
+          isOneTime: true,
+          dailyRate: 0,
+          perMonthContribs,
+          totalForPeriod: amount,
+          frequency: 'One-time',
+          startDate: p.startDate,
+        });
         if (isExpenseType(typeName)) {
           const catName = p.category?.name || 'Без категорії';
           catMap[catName] = (catMap[catName] || 0) + amount;
@@ -123,12 +153,16 @@ export const Planning: React.FC = () => {
     const periodExpFinal = monthsNet.reduce((s, v) => s + (v < 0 ? -v : 0), 0);
     const periodSavingsFinal = periodIncFinal - periodExpFinal;
 
+    // sort debug entries by absolute total (largest first)
+    debugArr.sort((a, b) => Math.abs((b.totalForPeriod || 0)) - Math.abs((a.totalForPeriod || 0)));
+
     return {
       monthsSavings: monthsNet,
       periodIncome: periodIncFinal,
       periodExpense: periodExpFinal,
       periodSavings: periodSavingsFinal,
       expenseByCategory: catMap,
+      debugDetails: debugArr,
     };
   }, [planned, convert, monthsToForecast, selectedCurrencyName]);
 
@@ -276,23 +310,42 @@ export const Planning: React.FC = () => {
             <Card className="bg-white border border-hairline p-4">
               <h4 className="text-sm font-semibold mb-2">Розбивка по місяцях (debug)</h4>
               <div className="text-xs text-[#7a7a7a] mb-2">Горизонт: {monthsToForecast} міс.</div>
-              <div className="space-y-2">
-                {monthsSavings.map((amt, i) => {
-                  const d = new Date();
-                  const monthIndex = d.getMonth() + i;
-                  const year = d.getFullYear() + Math.floor(monthIndex / 12);
-                  const month = monthIndex % 12;
-                  const startDay = i === 0 ? d.getDate() : 1;
-                  const start = new Date(year, month, startDay);
-                  const end = new Date(year, month + 1, 0);
-                  return (
-                    <div key={i} className="flex justify-between items-center">
-                      <div className="text-[13px] text-[#444]">{start.toLocaleDateString('uk-UA')} — {end.toLocaleDateString('uk-UA')}</div>
-                      <div className="font-mono text-sm">{formatCurrency(amt, 0)} {selectedCurrencyName}</div>
+                  <div className="space-y-2">
+                    {monthsSavings.map((amt, i) => {
+                      const d = new Date();
+                      const monthIndex = d.getMonth() + i;
+                      const year = d.getFullYear() + Math.floor(monthIndex / 12);
+                      const month = monthIndex % 12;
+                      const startDay = i === 0 ? d.getDate() : 1;
+                      const start = new Date(year, month, startDay);
+                      const end = new Date(year, month + 1, 0);
+                      return (
+                        <div key={i} className="flex justify-between items-center">
+                          <div className="text-[13px] text-[#444]">{start.toLocaleDateString('uk-UA')} — {end.toLocaleDateString('uk-UA')}</div>
+                          <div className="font-mono text-sm">{formatCurrency(amt, 0)} {selectedCurrencyName}</div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                  <div className="mt-4">
+                    <h5 className="text-sm font-semibold mb-2">Деталі планових транзакцій (debug)</h5>
+                    <div className="space-y-2 text-xs">
+                      {debugDetails.map((d: any) => (
+                        <div key={d.id} className="border border-hairline/50 p-2 rounded-md bg-[#fafafa]">
+                          <div className="flex justify-between items-center">
+                            <div className="font-medium">{d.name} — {d.type}</div>
+                            <div className="font-mono">{formatCurrency(d.amount, 0)} {d.currency}</div>
+                          </div>
+                          <div className="text-[12px] text-[#666] mt-1">{d.frequency} • start: {d.startDate ? new Date(d.startDate).toLocaleDateString('uk-UA') : '-'}</div>
+                          <div className="mt-2 grid grid-cols-4 gap-2 text-[12px]">
+                            {d.perMonthContribs.map((c: number, idx: number) => (
+                              <div key={idx} className="text-right">{formatCurrency(c, 0)}</div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
             </Card>
           )}
 
