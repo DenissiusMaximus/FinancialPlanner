@@ -18,6 +18,7 @@ import {
   useGetApiTransactionType,
   useGetApiCategory,
 } from '../api/generated/endpoints';
+import { TransactionTypeEnum } from '../types/enums';
 import {
   calculateTotalAimsProgress
 } from '../utils/calculations';
@@ -43,6 +44,7 @@ export const Dashboard: React.FC = () => {
     transactionTypeId: string;
     categoryId: string;
     comment: string;
+    destinationSourceId?: string;
   }>({
     amount: '',
     date: getLocalDatetime(),
@@ -50,8 +52,9 @@ export const Dashboard: React.FC = () => {
     transactionTypeId: '',
     categoryId: '',
     comment: '',
+    destinationSourceId: undefined,
   });
-  const [txErrors, setTxErrors] = useState<{ amount?: string; sourceId?: string; transactionTypeId?: string }>({});
+  const [txErrors, setTxErrors] = useState<{ amount?: string; sourceId?: string; transactionTypeId?: string; destinationSourceId?: string }>({});
 
   const [filters, setFilters] = useState<TransactionFilters>({
     SortBy: 'Date',
@@ -121,11 +124,13 @@ export const Dashboard: React.FC = () => {
       const name = String(t?.name ?? '').toLowerCase();
       return name === 'income' || name === 'надходження' || name === 'поповнення' || name === 'дохід';
     });
+    const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
 
     setTxForm((prev) => ({
       ...prev,
       sourceId: String(sourceId),
       transactionTypeId: incomeType ? String(incomeType.id) : prev.transactionTypeId,
+      destinationSourceId: undefined,
     }));
     setTxErrors((prev) => ({ ...prev, sourceId: undefined, transactionTypeId: undefined }));
     setIsCreateTxOpen(true);
@@ -137,6 +142,17 @@ export const Dashboard: React.FC = () => {
     if (!txForm.amount || Number(txForm.amount) <= 0) errors.amount = 'Сума має бути більшою за 0';
     if (!txForm.sourceId) errors.sourceId = 'Виберіть джерело';
     if (!txForm.transactionTypeId) errors.transactionTypeId = 'Виберіть тип';
+    // detect transfer and require destination
+    const selectedType = types.find((t: any) => String(t.id) === String(txForm.transactionTypeId));
+    const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
+    const isTransfer = Boolean(
+      selectedType && (
+        String(selectedType.id) === String(transferType?.id) ||
+        (selectedType?.name || '').toString().toLowerCase().includes('transfer') ||
+        (selectedType?.name || '').toString().toLowerCase().includes('переказ')
+      )
+    );
+    if (isTransfer && !txForm.destinationSourceId) errors.destinationSourceId = 'Оберіть місце призначення переказу';
     setTxErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
@@ -149,6 +165,7 @@ export const Dashboard: React.FC = () => {
           sourceId: Number(txForm.sourceId),
           transactionTypeId: Number(txForm.transactionTypeId),
           categoryId: txForm.categoryId ? Number(txForm.categoryId) : null,
+          destinationSourceId: txForm.destinationSourceId ? Number(txForm.destinationSourceId) : null,
           comment: txForm.comment || '',
           currencyId: source?.currency?.id,
         },
@@ -356,7 +373,7 @@ export const Dashboard: React.FC = () => {
                   amount: '',
                   date: getLocalDatetime(),
                   sourceId: '',
-                  transactionTypeId: '',
+                    transactionTypeId: '',
                   categoryId: '',
                   comment: '',
                 });
@@ -366,6 +383,25 @@ export const Dashboard: React.FC = () => {
             >
               + Транзакція
             </Button>
+              <Button
+                onClick={() => {
+                  const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
+                  setTxForm({
+                    amount: '',
+                    date: getLocalDatetime(),
+                    sourceId: '',
+                    transactionTypeId: transferType ? String(transferType.id) : '',
+                    categoryId: '',
+                    comment: '',
+                    destinationSourceId: undefined,
+                  });
+                  setTxErrors({});
+                  setIsCreateTxOpen(true);
+                }}
+                variant="secondary"
+              >
+                + Переказ
+              </Button>
             <Button variant="secondary" onClick={() => navigate('/transactions')}>Всі транзакції</Button>
           </div>
         }
@@ -455,6 +491,41 @@ export const Dashboard: React.FC = () => {
             </select>
             {txErrors.sourceId && <p className="mt-1 text-xs text-red-500">{txErrors.sourceId}</p>}
           </div>
+
+          {/* Destination select for transfers */}
+          {(() => {
+            const selectedType = types.find((t: any) => String(t.id) === String(txForm.transactionTypeId));
+            const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
+            const isTransfer = Boolean(
+              selectedType && (
+                String(selectedType.id) === String(transferType?.id) ||
+                (selectedType?.name || '').toString().toLowerCase().includes('transfer') ||
+                (selectedType?.name || '').toString().toLowerCase().includes('переказ')
+              )
+            );
+            if (!isTransfer) return null;
+            return (
+              <div>
+                <label className="block text-sm font-semibold text-ink mb-2">Куди надходить (одержувач)</label>
+                <select
+                  value={txForm.destinationSourceId || ''}
+                  onChange={(e) => {
+                    setTxForm({ ...txForm, destinationSourceId: e.target.value });
+                    if (txErrors.destinationSourceId) setTxErrors((p) => ({ ...p, destinationSourceId: undefined }));
+                  }}
+                  className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
+                >
+                  <option value="">Виберіть одержувача</option>
+                  {sources
+                    .filter((s: any) => String(s.id) !== String(txForm.sourceId))
+                    .map((s: any) => (
+                      <option key={s.id} value={s.id}>{s.name}</option>
+                    ))}
+                </select>
+                {txErrors.destinationSourceId && <p className="mt-1 text-xs text-red-500">{txErrors.destinationSourceId}</p>}
+              </div>
+            );
+          })()}
 
           <div>
             <label className="block text-sm font-semibold text-ink mb-2">Категорія (опціонально)</label>
