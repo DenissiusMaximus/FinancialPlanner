@@ -87,8 +87,19 @@ export const Planning: React.FC = () => {
     // helper: parse startDate strings robustly (accept ISO or dd.MM.yyyy)
     const parseDateSafe = (s?: string | null) => {
       if (!s) return null;
-      const d = new Date(s);
+      
+      let safeStr = s;
+      // Fix for Safari: replace "YYYY-MM-DD HH:mm:ss" with "YYYY-MM-DDTHH:mm:ss"
+      safeStr = safeStr.trim().replace(' ', 'T');
+      // Fix for Safari: truncate fractional seconds to 3 digits (e.g., .1234567 -> .123)
+      safeStr = safeStr.replace(/(\.\d{3})\d+/, '$1');
+
+      let d = new Date(safeStr);
       if (!isNaN(d.getTime())) return d;
+      
+      d = new Date(s);
+      if (!isNaN(d.getTime())) return d;
+      
       // try dd.MM.yyyy
       const m = /^([0-3]?\d)\.([0-1]?\d)\.([0-9]{4})$/.exec(s);
       if (m) {
@@ -338,14 +349,14 @@ export const Planning: React.FC = () => {
               </div>
             </div>
 
-            <div className="mt-5 pt-3 border-t border-hairline flex justify-center">
+            <div className="mt-6 flex justify-center">
               <button 
                 type="button" 
                 onClick={() => setShowDetailedBreakdown(s => !s)} 
-                className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+                className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-semibold text-primary bg-primary/10 px-5 py-3 rounded-xl hover:bg-primary/20 transition-colors active:scale-[0.98]"
               >
-                {showDetailedBreakdown ? 'Приховати детальну розбивку' : 'Показати детальну розбивку'}
-                {showDetailedBreakdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+                {showDetailedBreakdown ? 'Приховати розбивку по місяцям' : 'Показати розбивку по місяцям'}
+                {showDetailedBreakdown ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
               </button>
             </div>
           </Card>
