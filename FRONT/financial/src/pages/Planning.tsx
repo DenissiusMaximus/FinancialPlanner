@@ -82,6 +82,22 @@ export const Planning: React.FC = () => {
       }
     }
 
+    // helper: parse startDate strings robustly (accept ISO or dd.MM.yyyy)
+    const parseDateSafe = (s?: string | null) => {
+      if (!s) return null;
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d;
+      // try dd.MM.yyyy
+      const m = /^([0-3]?\d)\.([0-1]?\d)\.([0-9]{4})$/.exec(s);
+      if (m) {
+        const day = Number(m[1]);
+        const month = Number(m[2]) - 1;
+        const year = Number(m[3]);
+        return new Date(year, month, day);
+      }
+      return null;
+    };
+
     const debugArr: any[] = [];
     // Build month-by-month net amounts using daily rates
     planned.forEach((p) => {
@@ -93,7 +109,19 @@ export const Planning: React.FC = () => {
       if (!isOneTime && sign !== 0) {
         // recurring: allocate dailyRate * daysInMonths[i]
         let totalForPeriod = 0;
+        const startDate = parseDateSafe(p.startDate) ;
         for (let i = 0; i < monthsToForecast; i++) {
+          // compute month start/end for this horizon month
+          const year = now.getFullYear() + Math.floor((now.getMonth() + i) / 12);
+          const month = (now.getMonth() + i) % 12;
+          const monthEnd = new Date(year, month + 1, 0, 23, 59, 59, 999);
+
+          // if there's a configured startDate and it is after the end of this month, skip allocation
+          if (startDate && startDate > monthEnd) {
+            perMonthContribs[i] = 0;
+            continue;
+          }
+
           const contrib = dailyRate * daysInMonths[i] * sign;
           months[i] += contrib;
           perMonthContribs[i] = contrib;
@@ -118,7 +146,8 @@ export const Planning: React.FC = () => {
         });
       } else if (isOneTime) {
         if (!p.startDate) return;
-        const start = new Date(p.startDate);
+        const start = parseDateSafe(p.startDate);
+        if (!start) return;
         // if start is earlier than today and within current month but before now, skip
         if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) {
           return;
