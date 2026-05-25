@@ -5,7 +5,7 @@ import { Modal } from '../components/Modal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
-import { Trash2, FolderOpen } from 'lucide-react';
+import { Trash2, FolderOpen, ChevronDown } from 'lucide-react';
 import {
   useGetApiCategory,
   usePostApiCategory,
@@ -16,13 +16,7 @@ import {
   usePatchApiFrequencyId,
   useDeleteApiFrequencyId,
   useGetApiIntervalUnit,
-  useGetApiTransaction,
-  usePostApiTransaction,
-  useDeleteApiTransactionId,
-  useGetApiSource,
-  useGetApiTransactionType,
 } from '../api/generated/endpoints';
-import { TransactionTable } from '../components/TransactionTable';
 import { translateIntervalUnitName, getFrequencyLabel } from '../utils/display-helpers';
 
 export const Settings: React.FC = () => {
@@ -63,27 +57,8 @@ export const Settings: React.FC = () => {
   const units = Array.isArray(unitsQuery.data) ? unitsQuery.data : [];
   const isFreqsLoading = freqsQuery.isLoading || unitsQuery.isLoading;
 
-  // Transactions inside settings
   const [expandCategories, setExpandCategories] = useState(true);
-  const [expandTransactions, setExpandTransactions] = useState(false);
   const [expandFrequencies, setExpandFrequencies] = useState(false);
-
-  const transactionsQuery = useGetApiTransaction({ Limit: 50 });
-  const sourcesQuery = useGetApiSource();
-  const typesQuery = useGetApiTransactionType();
-  const createTransaction = usePostApiTransaction();
-  const deleteMutation = useDeleteApiTransactionId();
-  const transactions = Array.isArray(transactionsQuery.data?.data)
-    ? transactionsQuery.data.data
-    : Array.isArray(transactionsQuery.data)
-    ? transactionsQuery.data
-    : [];
-  const sources = Array.isArray(sourcesQuery.data) ? sourcesQuery.data : [];
-  const types = Array.isArray(typesQuery.data) ? typesQuery.data : [];
-
-  const [isCreateTxModalOpen, setIsCreateTxModalOpen] = useState(false);
-  const [txForm, setTxForm] = useState({ amount: '', date: '', sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
-  const [txErrors, setTxErrors] = useState<any>({});
 
   const getLocalDatetime = (d?: string) => {
     const dt = d ? new Date(d) : new Date();
@@ -91,39 +66,7 @@ export const Settings: React.FC = () => {
     return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
   };
 
-  const openCreateTx = () => {
-    setTxErrors({});
-    setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
-    setIsCreateTxModalOpen(true);
-  };
-
-  const validateTx = () => {
-    const errs: any = {};
-    if (!txForm.date) errs.date = 'Оберіть дату';
-    if (!txForm.sourceId) errs.sourceId = 'Виберіть джерело';
-    if (!txForm.transactionTypeId) errs.transactionTypeId = 'Виберіть тип транзакції';
-    if (!txForm.amount || Number(txForm.amount) <= 0) errs.amount = 'Сума має бути більшою за 0';
-    const selectedType = types.find((t: any) => String(t.id) === String(txForm.transactionTypeId));
-    const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
-    if (isTransfer && !txForm.destinationSourceId) errs.destinationSourceId = 'Оберіть одержувача переказу';
-    setTxErrors(errs);
-    return Object.keys(errs).length === 0;
-  };
-
-  const submitCreateTx = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!validateTx()) return;
-    try {
-      const source = sources.find((s:any)=>s.id===Number(txForm.sourceId));
-      await createTransaction.mutateAsync({ data: { amount: Number(txForm.amount), date: txForm.date, sourceId: Number(txForm.sourceId), transactionTypeId: Number(txForm.transactionTypeId), categoryId: txForm.categoryId ? Number(txForm.categoryId) : null, destinationSourceId: txForm.destinationSourceId ? Number(txForm.destinationSourceId) : null, comment: txForm.comment || '', currencyId: source?.currency?.id } });
-      setIsCreateTxModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
-      transactionsQuery.refetch();
-      setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
-    } catch (err) {
-      console.error(err);
-    }
-  };
+  
 
   // Category handlers
   const handleOpenCreateCategory = () => {
@@ -210,6 +153,11 @@ export const Settings: React.FC = () => {
   const handleDeleteFreq = (id: number) => setFreqToDelete(id);
   const confirmDeleteFreq = async () => {
     if (!freqToDelete) return;
+    if ([1,2,3,4,5].includes(Number(freqToDelete))) {
+      alert('Базові проміжки видаляти не можна.');
+      setFreqToDelete(null);
+      return;
+    }
     try {
       await deleteFreq.mutateAsync({ id: freqToDelete });
       queryClient.invalidateQueries({ queryKey: ['/api/Frequency'] });
@@ -257,7 +205,9 @@ export const Settings: React.FC = () => {
           </div>
           <div className="flex items-center gap-3">
             <Button onClick={(e)=>{ e.stopPropagation(); handleOpenCreateCategory(); }}>+ Додати категорію</Button>
-            <div className="text-sm text-[#7a7a7a]">{expandCategories ? 'Згорнути' : 'Розгорнути'}</div>
+            <button onClick={(e)=>{ e.stopPropagation(); setExpandCategories(s=>!s); }} type="button" aria-label="toggle" className="p-2 rounded-lg">
+              <ChevronDown className={`${expandCategories ? 'rotate-180' : ''} transition-transform text-[#7a7a7a]`} />
+            </button>
           </div>
         </button>
 
@@ -287,32 +237,7 @@ export const Settings: React.FC = () => {
         )}
       </div>
 
-      {/* Transactions accordion */}
-      <div className="bg-white border border-hairline rounded-2xl p-4">
-        <button className="w-full flex items-center justify-between" onClick={() => setExpandTransactions((s) => !s)}>
-          <div className="flex items-center gap-3">
-            <div className="bg-primary/10 text-primary p-2 rounded-lg"><FolderOpen size={18} /></div>
-            <div>
-              <div className="font-semibold">Транзакції</div>
-              <div className="text-xs text-[#7a7a7a]">Перегляд останніх транзакцій та додавання нових</div>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <Button onClick={(e)=>{ e.stopPropagation(); openCreateTx(); }}>+ Додати транзакцію</Button>
-            <div className="text-sm text-[#7a7a7a]">{expandTransactions ? 'Згорнути' : 'Розгорнути'}</div>
-          </div>
-        </button>
-
-        {expandTransactions && (
-          <div className="mt-4">
-            {transactions.length > 0 ? (
-              <TransactionTable transactions={transactions as any} onDelete={(id)=>{ deleteMutation.mutateAsync({ id }).then(()=>transactionsQuery.refetch()); }} />
-            ) : (
-              <EmptyState title="Немає транзакцій" description="Додайте першу транзакцію" action={<Button onClick={openCreateTx}>+ Нова транзакція</Button>} />
-            )}
-          </div>
-        )}
-      </div>
+      {/* Transactions moved to main Transactions page */}
 
       {/* Frequencies accordion (optional) */}
       <div className="bg-white border border-hairline rounded-2xl p-4">
@@ -324,7 +249,12 @@ export const Settings: React.FC = () => {
               <div className="text-xs text-[#7a7a7a]">Управління проміжками повторення</div>
             </div>
           </div>
-          <div className="text-sm text-[#7a7a7a]">{expandFrequencies ? 'Згорнути' : 'Розгорнути'}</div>
+          <div className="flex items-center gap-3">
+            <Button onClick={(e)=>{ e.stopPropagation(); handleOpenCreateFreq(); }}>+ Новий проміжок</Button>
+            <button onClick={(e)=>{ e.stopPropagation(); setExpandFrequencies(s=>!s); }} type="button" aria-label="toggle" className="p-2 rounded-lg">
+              <ChevronDown className={`${expandFrequencies ? 'rotate-180' : ''} transition-transform text-[#7a7a7a]`} />
+            </button>
+          </div>
         </button>
 
         {expandFrequencies && (
@@ -346,7 +276,11 @@ export const Settings: React.FC = () => {
                     </div>
 
                     <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-hairline">
-                      <button onClick={() => handleDeleteFreq(f.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
+                      {!(f.userId === 0 || [1,2,3,4,5].includes(Number(f.id))) ? (
+                        <button onClick={() => handleDeleteFreq(f.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
+                      ) : (
+                        <div className="text-xs text-[#7a7a7a]">Базовий</div>
+                      )}
                     </div>
                   </div>
                 ))}
@@ -416,75 +350,7 @@ export const Settings: React.FC = () => {
 
       <ConfirmModal isOpen={freqToDelete !== null} title="Видалення проміжку" message="Ви впевнені, що хочете видалити цей проміжок?" onConfirm={confirmDeleteFreq} onCancel={() => setFreqToDelete(null)} />
 
-      {/* Create transaction modal */}
-      <Modal isOpen={isCreateTxModalOpen} title="Нова транзакція" onClose={() => setIsCreateTxModalOpen(false)} size="md">
-        <form onSubmit={submitCreateTx} className="space-y-4">
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Тип</label>
-            <select value={txForm.transactionTypeId} onChange={(e)=>setTxForm({...txForm, transactionTypeId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
-              <option value="">Виберіть тип</option>
-              {types.map((t:any)=>(<option key={t.id} value={t.id}>{t.name}</option>))}
-            </select>
-            {txErrors.transactionTypeId && <p className="mt-1 text-xs text-red-500">{txErrors.transactionTypeId}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Сума</label>
-            <input type="number" value={txForm.amount} onChange={(e)=>setTxForm({...txForm, amount: e.target.value})} placeholder="0.00" step="0.01" min="0.01" className="w-full px-4 py-2 border border-hairline rounded-lg" />
-            {txErrors.amount && <p className="mt-1 text-xs text-red-500">{txErrors.amount}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
-            <input type="datetime-local" step="1" value={txForm.date} onChange={(e)=>setTxForm({...txForm, date: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg" />
-            {txErrors.date && <p className="mt-1 text-xs text-red-500">{txErrors.date}</p>}
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Джерело</label>
-            <select value={txForm.sourceId} onChange={(e)=>setTxForm({...txForm, sourceId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
-              <option value="">Виберіть джерело</option>
-              {sources.map((s:any)=>(<option key={s.id} value={s.id}>{s.name}</option>))}
-            </select>
-            {txErrors.sourceId && <p className="mt-1 text-xs text-red-500">{txErrors.sourceId}</p>}
-          </div>
-
-          {/* Destination for transfer */}
-          {(() => {
-            const selectedType = types.find((t:any)=>String(t.id)===String(txForm.transactionTypeId));
-            const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
-            if (!isTransfer) return null;
-            return (
-              <div>
-                <label className="block text-sm font-semibold text-ink mb-2">Куди надходить (одержувач)</label>
-                <select value={txForm.destinationSourceId || ''} onChange={(e)=>setTxForm({...txForm, destinationSourceId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
-                  <option value="">Виберіть одержувача</option>
-                  {sources.filter((s:any)=>String(s.id)!==String(txForm.sourceId)).map((s:any)=>(<option key={s.id} value={s.id}>{s.name}</option>))}
-                </select>
-                {txErrors.destinationSourceId && <p className="mt-1 text-xs text-red-500">{txErrors.destinationSourceId}</p>}
-              </div>
-            );
-          })()}
-
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Категорія (опціонально)</label>
-            <select value={txForm.categoryId} onChange={(e)=>setTxForm({...txForm, categoryId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
-              <option value="">Без категорії</option>
-              {categories.map((c:any)=>(<option key={c.id} value={c.id}>{c.name}</option>))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-semibold text-ink mb-2">Коментар (опціонально)</label>
-            <textarea value={txForm.comment} onChange={(e)=>setTxForm({...txForm, comment: e.target.value})} rows={3} className="w-full px-4 py-2 border border-hairline rounded-lg" />
-          </div>
-
-          <div className="flex gap-3 pt-4">
-            <Button variant="secondary" onClick={()=>setIsCreateTxModalOpen(false)} type="button">Скасувати</Button>
-            <Button type="submit" isLoading={createTransaction.isPending}>Створити</Button>
-          </div>
-        </form>
-      </Modal>
+      {/* Create transaction removed from Settings */}
     </div>
   );
 };
