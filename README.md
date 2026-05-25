@@ -1,9 +1,9 @@
-# Financial Planner API
+# Financial Planner
 
 ## Live Demo
-API доступний тут: https://fin.ubivator.tech/
+The full application is available here: https://fin.ubivator.tech/
 
-> Примітка: база даних хоститься на безкоштовному тарифі, тому інколи “засинає”. Якщо запит не проходить з першого разу — просто відкрий посилання/зроби запит ще раз, зачекай ~30 секунд і повтори.
+> Note: the database is hosted on a free tier, so it may go to sleep when idle. If the app/API doesn’t respond on the first try, open it once, wait ~30 seconds, and try again.
 
 The backend portion of a personal finance management application, built with ASP.NET Core. This project is developed with a strong emphasis on clean code, scalability, and the implementation of mod[...]
 
