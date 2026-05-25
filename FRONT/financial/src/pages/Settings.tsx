@@ -60,14 +60,6 @@ export const Settings: React.FC = () => {
   const [expandCategories, setExpandCategories] = useState(true);
   const [expandFrequencies, setExpandFrequencies] = useState(false);
 
-  const getLocalDatetime = (d?: string) => {
-    const dt = d ? new Date(d) : new Date();
-    const pad = (n: number) => String(n).padStart(2, '0');
-    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
-  };
-
-  
-
   // Category handlers
   const handleOpenCreateCategory = () => {
     setEditingCategory(null);
