@@ -5,7 +5,7 @@ import { Modal } from '../components/Modal';
 import { ConfirmModal } from '../components/ConfirmModal';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
-import { Pencil, Trash2, FolderOpen } from 'lucide-react';
+import { Trash2, FolderOpen } from 'lucide-react';
 import {
   useGetApiCategory,
   usePostApiCategory,
@@ -18,6 +18,7 @@ import {
   useGetApiIntervalUnit,
   useGetApiTransaction,
   usePostApiTransaction,
+  useDeleteApiTransactionId,
   useGetApiSource,
   useGetApiTransactionType,
 } from '../api/generated/endpoints';
@@ -71,6 +72,7 @@ export const Settings: React.FC = () => {
   const sourcesQuery = useGetApiSource();
   const typesQuery = useGetApiTransactionType();
   const createTransaction = usePostApiTransaction();
+  const deleteMutation = useDeleteApiTransactionId();
   const transactions = Array.isArray(transactionsQuery.data?.data)
     ? transactionsQuery.data.data
     : Array.isArray(transactionsQuery.data)
@@ -80,7 +82,7 @@ export const Settings: React.FC = () => {
   const types = Array.isArray(typesQuery.data) ? typesQuery.data : [];
 
   const [isCreateTxModalOpen, setIsCreateTxModalOpen] = useState(false);
-  const [txForm, setTxForm] = useState({ amount: '', date: '', sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+  const [txForm, setTxForm] = useState({ amount: '', date: '', sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
   const [txErrors, setTxErrors] = useState<any>({});
 
   const getLocalDatetime = (d?: string) => {
@@ -91,7 +93,7 @@ export const Settings: React.FC = () => {
 
   const openCreateTx = () => {
     setTxErrors({});
-    setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+    setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
     setIsCreateTxModalOpen(true);
   };
 
@@ -101,6 +103,9 @@ export const Settings: React.FC = () => {
     if (!txForm.sourceId) errs.sourceId = 'Виберіть джерело';
     if (!txForm.transactionTypeId) errs.transactionTypeId = 'Виберіть тип транзакції';
     if (!txForm.amount || Number(txForm.amount) <= 0) errs.amount = 'Сума має бути більшою за 0';
+    const selectedType = types.find((t: any) => String(t.id) === String(txForm.transactionTypeId));
+    const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+    if (isTransfer && !txForm.destinationSourceId) errs.destinationSourceId = 'Оберіть одержувача переказу';
     setTxErrors(errs);
     return Object.keys(errs).length === 0;
   };
@@ -110,10 +115,11 @@ export const Settings: React.FC = () => {
     if (!validateTx()) return;
     try {
       const source = sources.find((s:any)=>s.id===Number(txForm.sourceId));
-      await createTransaction.mutateAsync({ data: { amount: Number(txForm.amount), date: txForm.date, sourceId: Number(txForm.sourceId), transactionTypeId: Number(txForm.transactionTypeId), categoryId: txForm.categoryId ? Number(txForm.categoryId) : null, comment: txForm.comment || '', currencyId: source?.currency?.id } });
+      await createTransaction.mutateAsync({ data: { amount: Number(txForm.amount), date: txForm.date, sourceId: Number(txForm.sourceId), transactionTypeId: Number(txForm.transactionTypeId), categoryId: txForm.categoryId ? Number(txForm.categoryId) : null, destinationSourceId: txForm.destinationSourceId ? Number(txForm.destinationSourceId) : null, comment: txForm.comment || '', currencyId: source?.currency?.id } });
       setIsCreateTxModalOpen(false);
       queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
       transactionsQuery.refetch();
+      setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: '' });
     } catch (err) {
       console.error(err);
     }
@@ -123,12 +129,6 @@ export const Settings: React.FC = () => {
   const handleOpenCreateCategory = () => {
     setEditingCategory(null);
     setCategoryName('');
-    setCategoryError('');
-    setIsCategoryModalOpen(true);
-  };
-  const handleOpenEditCategory = (category: any) => {
-    setEditingCategory({ id: category.id, name: category.name });
-    setCategoryName(category.name);
     setCategoryError('');
     setIsCategoryModalOpen(true);
   };
@@ -173,15 +173,7 @@ export const Settings: React.FC = () => {
     setFreqError('');
     setIsFreqModalOpen(true);
   };
-  const handleOpenEditFreq = (f: any) => {
-    setEditingFreq(f);
-    setFreqName(f.name || '');
-    setFreqValue(f.intervalValue ?? undefined);
-    setFreqUnitId(f.intervalUnit?.id ?? undefined);
-    setIsOneTime((f.intervalValue ?? 0) >= 9999);
-    setFreqError('');
-    setIsFreqModalOpen(true);
-  };
+  
   const handleSubmitFreq = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!freqName.trim()) {
@@ -456,6 +448,23 @@ export const Settings: React.FC = () => {
             </select>
             {txErrors.sourceId && <p className="mt-1 text-xs text-red-500">{txErrors.sourceId}</p>}
           </div>
+
+          {/* Destination for transfer */}
+          {(() => {
+            const selectedType = types.find((t:any)=>String(t.id)===String(txForm.transactionTypeId));
+            const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+            if (!isTransfer) return null;
+            return (
+              <div>
+                <label className="block text-sm font-semibold text-ink mb-2">Куди надходить (одержувач)</label>
+                <select value={txForm.destinationSourceId || ''} onChange={(e)=>setTxForm({...txForm, destinationSourceId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
+                  <option value="">Виберіть одержувача</option>
+                  {sources.filter((s:any)=>String(s.id)!==String(txForm.sourceId)).map((s:any)=>(<option key={s.id} value={s.id}>{s.name}</option>))}
+                </select>
+                {txErrors.destinationSourceId && <p className="mt-1 text-xs text-red-500">{txErrors.destinationSourceId}</p>}
+              </div>
+            );
+          })()}
 
           <div>
             <label className="block text-sm font-semibold text-ink mb-2">Категорія (опціонально)</label>

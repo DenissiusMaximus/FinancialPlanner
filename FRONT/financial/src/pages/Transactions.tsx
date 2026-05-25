@@ -27,7 +27,7 @@ export const Transactions: React.FC = () => {
     SortBy: 'Date',
     SortDescending: true,
   });
-  const [createErrors, setCreateErrors] = useState<{ amount?: string; date?: string; sourceId?: string; transactionTypeId?: string }>({});
+  const [createErrors, setCreateErrors] = useState<{ amount?: string; date?: string; sourceId?: string; transactionTypeId?: string; destinationSourceId?: string }>({});
   const [formData, setFormData] = useState<{
     amount: string;
     date: string;
@@ -35,6 +35,7 @@ export const Transactions: React.FC = () => {
     transactionTypeId: string;
     categoryId: string;
     comment: string;
+    destinationSourceId?: string;
   }>({
     amount: '',
     date: getLocalDatetime(),
@@ -42,6 +43,7 @@ export const Transactions: React.FC = () => {
     transactionTypeId: '',
     categoryId: '',
     comment: '',
+    destinationSourceId: undefined,
   });
 
   // Build API query params — pass filters to server
@@ -122,13 +124,19 @@ export const Transactions: React.FC = () => {
 
   // Edit UI removed — keep hooks only
 
-  const validateTransaction = (mode: 'create' | 'edit') => {
-    const errors: { amount?: string; date?: string; sourceId?: string; transactionTypeId?: string } = {};
+  const validateTransaction = () => {
+    const errors: { amount?: string; date?: string; sourceId?: string; transactionTypeId?: string; destinationSourceId?: string } = {};
 
     if (!formData.date) errors.date = 'Оберіть дату';
     if (!formData.sourceId) errors.sourceId = 'Виберіть джерело';
     if (!formData.transactionTypeId) errors.transactionTypeId = 'Виберіть тип транзакції';
     if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Сума має бути більшою за 0';
+
+    const selectedType = types.find(t => String(t.id) === String(formData.transactionTypeId));
+    const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+    if (isTransfer && !formData.destinationSourceId) {
+      errors.destinationSourceId = 'Оберіть місце призначення переказу';
+    }
 
     setCreateErrors(errors);
 
@@ -137,7 +145,7 @@ export const Transactions: React.FC = () => {
 
   const handleCreateSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!validateTransaction('create')) return;
+    if (!validateTransaction()) return;
     try {
       const source = sources.find(s => s.id === Number(formData.sourceId));
       await createMutation.mutateAsync({
@@ -147,12 +155,13 @@ export const Transactions: React.FC = () => {
           sourceId: Number(formData.sourceId),
           transactionTypeId: Number(formData.transactionTypeId),
           categoryId: formData.categoryId ? Number(formData.categoryId) : null,
+          destinationSourceId: formData.destinationSourceId ? Number(formData.destinationSourceId) : null,
           comment: formData.comment || '',
           currencyId: source?.currency?.id,
         },
       });
       setIsCreateModalOpen(false);
-      setFormData({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+      setFormData({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '', destinationSourceId: undefined });
       setCreateErrors({});
       invalidateTransactions();
     } catch (error: any) {
@@ -208,7 +217,7 @@ export const Transactions: React.FC = () => {
     onClose,
     submitLabel,
   }: {
-    errors: { amount?: string; date?: string; sourceId?: string; transactionTypeId?: string };
+    errors: { amount?: string; date?: string; sourceId?: string; transactionTypeId?: string; destinationSourceId?: string };
     isSubmitting: boolean;
     onClose: () => void;
     submitLabel: string;
@@ -289,6 +298,36 @@ export const Transactions: React.FC = () => {
         </select>
         {errors.sourceId && <p className="mt-1 text-xs text-red-500">{errors.sourceId}</p>}
       </div>
+
+      {/* Destination select for transfers */}
+      {(() => {
+        const selectedType = types.find((t: any) => String(t.id) === String(formData.transactionTypeId));
+        const isTransfer = (selectedType?.name || '').toString().toLowerCase().includes('transfer') || (selectedType?.name || '').toString().toLowerCase().includes('переказ');
+        if (!isTransfer) return null;
+        return (
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Куди надходить (одержувач)</label>
+            <select
+              value={formData.destinationSourceId || ''}
+              onChange={(e) => {
+                setFormData({ ...formData, destinationSourceId: e.target.value });
+                if (errors.destinationSourceId) {
+                  setCreateErrors((p) => ({ ...p, destinationSourceId: undefined }));
+                }
+              }}
+              className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
+            >
+              <option value="">Виберіть одержувача</option>
+              {sources
+                .filter((s: any) => String(s.id) !== String(formData.sourceId))
+                .map((s: any) => (
+                  <option key={s.id} value={s.id}>{s.name}</option>
+                ))}
+            </select>
+            {errors.destinationSourceId && <p className="mt-1 text-xs text-red-500">{errors.destinationSourceId}</p>}
+          </div>
+        );
+      })()}
 
       <div>
         <label className="block text-sm font-semibold text-ink mb-2">Категорія (опціонально)</label>
