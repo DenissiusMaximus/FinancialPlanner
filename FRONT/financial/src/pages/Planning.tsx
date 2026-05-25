@@ -36,8 +36,10 @@ export const Planning: React.FC = () => {
   ) as PlannedTransactionDto[];
 
   // 1. Calculate per-month equivalents and per-period totals
-  const { monthsSavings, periodIncome, periodExpense, periodSavings, expenseByCategory, debugDetails } = useMemo(() => {
-    const months: number[] = new Array(monthsToForecast).fill(0);
+  const { monthsSavings, monthsIncome, monthsExpense, periodIncome, periodExpense, periodSavings, expenseByCategory, debugDetails } = useMemo(() => {
+    const monthsNet: number[] = new Array(monthsToForecast).fill(0);
+    const monthsIncomeArr: number[] = new Array(monthsToForecast).fill(0);
+    const monthsExpenseArr: number[] = new Array(monthsToForecast).fill(0);
     const catMap: Record<string, number> = {};
 
     const now = new Date();
@@ -123,7 +125,9 @@ export const Planning: React.FC = () => {
           }
 
           const contrib = dailyRate * daysInMonths[i] * sign;
-          months[i] += contrib;
+          monthsNet[i] += contrib;
+          if (sign > 0) monthsIncomeArr[i] += contrib;
+          else if (sign < 0) monthsExpenseArr[i] += Math.abs(contrib);
           perMonthContribs[i] = contrib;
           totalForPeriod += (dailyRate * daysInMonths[i]);
         }
@@ -154,7 +158,9 @@ export const Planning: React.FC = () => {
         }
         const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
         if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
-        months[monthIndex] += amount * sign;
+        monthsNet[monthIndex] += amount * sign;
+        if (sign > 0) monthsIncomeArr[monthIndex] += amount;
+        else if (sign < 0) monthsExpenseArr[monthIndex] += amount;
         perMonthContribs[monthIndex] = amount * sign;
         debugArr.push({
           id: p.id,
@@ -176,10 +182,9 @@ export const Planning: React.FC = () => {
       }
     });
 
-    // months currently holds net contributions per month (positive income, negative expenses)
-    const monthsNet = months;
-    const periodIncFinal = monthsNet.reduce((s, v) => s + (v > 0 ? v : 0), 0);
-    const periodExpFinal = monthsNet.reduce((s, v) => s + (v < 0 ? -v : 0), 0);
+    // monthsNet holds net contributions per month (positive income, negative expenses)
+    const periodIncFinal = monthsIncomeArr.reduce((s, v) => s + v, 0);
+    const periodExpFinal = monthsExpenseArr.reduce((s, v) => s + v, 0);
     const periodSavingsFinal = periodIncFinal - periodExpFinal;
 
     // sort debug entries by absolute total (largest first)
@@ -187,6 +192,8 @@ export const Planning: React.FC = () => {
 
     return {
       monthsSavings: monthsNet,
+      monthsIncome: monthsIncomeArr,
+      monthsExpense: monthsExpenseArr,
       periodIncome: periodIncFinal,
       periodExpense: periodExpFinal,
       periodSavings: periodSavingsFinal,
@@ -370,13 +377,24 @@ export const Planning: React.FC = () => {
                     const isNegative = amt < 0;
 
                     return (
-                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#f9f9fb] border border-hairline/50 gap-2">
-                        <div>
-                          <div className="text-sm font-semibold capitalize text-ink">{monthName}</div>
-                          <div className="text-xs text-[#7a7a7a] mt-0.5">{periodStr}</div>
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-[#f9f9fb] border border-hairline/50 gap-4">
+                        <div className="flex-1">
+                          <div className="text-sm font-semibold capitalize text-ink mb-1">{monthName}</div>
+                          <div className="text-xs text-[#7a7a7a]">{periodStr}</div>
                         </div>
-                        <div className={`font-mono font-bold text-base ${isPositive ? 'text-green-600' : isNegative ? 'text-red-500' : 'text-ink'}`}>
-                          {amt > 0 ? '+' : ''}{formatCurrency(amt, 0)} {selectedCurrencyName}
+                        <div className="flex items-center gap-4 text-sm font-mono whitespace-nowrap">
+                          <div className="text-green-600 flex flex-col items-end">
+                            <span className="text-[10px] text-green-600/70 font-sans uppercase font-bold leading-none mb-1">Доходи</span>
+                            +{formatCurrency(monthsIncome[i] || 0, 0)}
+                          </div>
+                          <div className="text-red-500 flex flex-col items-end">
+                            <span className="text-[10px] text-red-500/70 font-sans uppercase font-bold leading-none mb-1">Витрати</span>
+                            -{formatCurrency(monthsExpense[i] || 0, 0)}
+                          </div>
+                          <div className={`flex flex-col items-end border-l border-hairline pl-4 ml-2 ${isPositive ? 'text-ink' : isNegative ? 'text-red-500' : 'text-ink'}`}>
+                            <span className="text-[10px] text-[#7a7a7a] font-sans uppercase font-bold leading-none mb-1">Баланс</span>
+                            <span className="font-bold text-base">{amt > 0 ? '+' : ''}{formatCurrency(amt, 0)}</span>
+                          </div>
                         </div>
                       </div>
                     );
