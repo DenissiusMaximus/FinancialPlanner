@@ -23,15 +23,12 @@ import { getLocalDatetime } from '../utils/formatters';
 export const Transactions: React.FC = () => {
   const queryClient = useQueryClient();
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
-  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
-  const [editingTransaction, setEditingTransaction] = useState<any>(null);
   const [transactionToDelete, setTransactionToDelete] = useState<number | null>(null);
   const [filters, setFilters] = useState<TransactionFilters>({
     SortBy: 'Date',
     SortDescending: true,
   });
   const [createErrors, setCreateErrors] = useState<{ amount?: string; date?: string; sourceId?: string; transactionTypeId?: string }>({});
-  const [editErrors, setEditErrors] = useState<{ amount?: string; date?: string; sourceId?: string; transactionTypeId?: string }>({});
   const [formData, setFormData] = useState<{
     amount: string;
     date: string;
@@ -125,19 +122,7 @@ export const Transactions: React.FC = () => {
     setIsCreateModalOpen(true);
   };
 
-  const handleEditOpen = (transaction: any) => {
-    setEditingTransaction(transaction);
-    setFormData({
-      amount: String(transaction.amount ?? ''),
-      date: getLocalDatetime(transaction.date),
-      sourceId: String(transaction.source?.id ?? ''),
-      transactionTypeId: String(transaction.transactionType?.id ?? ''),
-      categoryId: String(transaction.category?.id ?? ''),
-      comment: transaction.comment || '',
-    });
-    setEditErrors({});
-    setIsEditModalOpen(true);
-  };
+  // Edit UI removed — keep hooks only
 
   const validateTransaction = (mode: 'create' | 'edit') => {
     const errors: { amount?: string; date?: string; sourceId?: string; transactionTypeId?: string } = {};
@@ -181,36 +166,7 @@ export const Transactions: React.FC = () => {
     }
   };
 
-  const handleUpdateSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingTransaction?.id) return;
-    if (!validateTransaction('edit')) return;
-
-    try {
-      const source = sources.find(s => s.id === Number(formData.sourceId));
-      await updateMutation.mutateAsync({
-        id: editingTransaction.id,
-        data: {
-          amount: Number(formData.amount),
-          date: formData.date,
-          sourceId: Number(formData.sourceId),
-          transactionTypeId: Number(formData.transactionTypeId),
-          categoryId: formData.categoryId ? Number(formData.categoryId) : null,
-          comment: formData.comment || '',
-          currencyId: source?.currency?.id,
-        },
-      });
-      setIsEditModalOpen(false);
-      setEditingTransaction(null);
-      setEditErrors({});
-      invalidateTransactions();
-    } catch (error: any) {
-      console.error('Error updating transaction:', error?.response?.data || error);
-      if (error?.response?.data?.errors) {
-        alert(JSON.stringify(error.response.data.errors, null, 2));
-      }
-    }
-  };
+  // Update handler removed (editing disabled)
 
   const handleDelete = (id: number) => {
     setTransactionToDelete(id);
@@ -417,7 +373,6 @@ export const Transactions: React.FC = () => {
           {transactions.length > 0 ? (
             <TransactionTable
               transactions={transactions as any}
-              onEdit={handleEditOpen}
               onDelete={handleDelete}
             />
           ) : (
@@ -454,21 +409,7 @@ export const Transactions: React.FC = () => {
       </Modal>
 
       {/* Edit Modal */}
-      <Modal
-        isOpen={isEditModalOpen}
-        title="Редагувати транзакцію"
-        onClose={() => setIsEditModalOpen(false)}
-        size="md"
-      >
-        <form onSubmit={handleUpdateSubmit}>
-          {TransactionForm({
-            errors: editErrors,
-            isSubmitting: updateMutation.isPending,
-            onClose: () => setIsEditModalOpen(false),
-            submitLabel: "Зберегти",
-          })}
-        </form>
-      </Modal>
+      {/* Edit UI removed */}
 
       <ConfirmModal
         isOpen={transactionToDelete !== null}

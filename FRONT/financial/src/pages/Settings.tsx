@@ -115,7 +115,7 @@ export const Settings: React.FC = () => {
     setFreqName(f.name || '');
     setFreqValue(f.intervalValue ?? undefined);
     setFreqUnitId(f.intervalUnit?.id ?? undefined);
-    setIsOneTime(!f.intervalUnit && (f.intervalValue === 0 || f.intervalValue === null || f.intervalValue === undefined));
+    setIsOneTime((f.intervalValue ?? 0) >= 9999);
     setFreqError('');
     setIsFreqModalOpen(true);
   };
@@ -128,8 +128,12 @@ export const Settings: React.FC = () => {
     try {
       const payload: any = { name: freqName.trim() };
       if (isOneTime) {
-        // mark as one-time: leave intervalUnitId undefined and set intervalValue to 1
-        payload.intervalValue = 1;
+        // backend requires intervalUnitId; choose 'year' unit if available else first unit
+        const yearUnit = units.find((u: any) => (u.name || '').toString().toLowerCase().includes('year') || (u.name || '').toString().toLowerCase().includes('рік'));
+        const chosenUnitId = yearUnit?.id ?? units[0]?.id;
+        if (chosenUnitId) payload.intervalUnitId = chosenUnitId;
+        // large value to approximate "one-time" (effectively won't repeat in practical use)
+        payload.intervalValue = 9999;
       } else {
         if (freqUnitId) payload.intervalUnitId = freqUnitId;
         if (typeof freqValue === 'number') payload.intervalValue = freqValue;
