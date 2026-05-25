@@ -34,114 +34,195 @@ export const Planning: React.FC = () => {
     Array.isArray(plannedRaw) ? plannedRaw : []
   ) as PlannedTransactionDto[];
 
-  // 1. Calculate Expected Monthly Savings Rate & Category Expenses
-  const { monthlyIncome, monthlyExpense, monthlySavings, expenseByCategory } = useMemo(() => {
-    let inc = 0;
-    let exp = 0;
+  // 1. Calculate per-month equivalents and per-period totals
+  const { monthsSavings, periodIncome, periodExpense, periodSavings, expenseByCategory } = useMemo(() => {
+    const months: number[] = new Array(monthsToForecast).fill(0);
     const catMap: Record<string, number> = {};
 
-    planned.forEach((p) => {
-      const typeName = p.transactionType?.name;
-      const amount = convert(p.amount || 0, p.currency);
-      let multiplier = 1;
+    const now = new Date();
+    const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
+    const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+    const daysRemainingInMonth = (endOfCurrentMonth.getDate() - now.getDate()) + 1;
+    const fractionCurrentMonth = daysRemainingInMonth / daysInCurrentMonth;
 
-      // Detect one-time frequencies. The backend/settings may store one-time as a very large
-      // interval (e.g. intervalValue=9999) or with a name containing 'one'/'одно'. In that case
-      // include the transaction only in the month of its `startDate` (multiplier=1) and ignore
-      // it for other months (multiplier=0). Otherwise, convert frequency to monthly equivalent.
-      const isOneTimeFrequency =
+    const getMonthlyEquivalent = (p: PlannedTransactionDto) => {
+      const amount = convert(p.amount || 0, p.currency);
+      // determine one-time
+      const isOneTime =
         !p.frequency ||
         (!!p.frequency.intervalValue && p.frequency.intervalValue >= 9999) ||
-        (p.frequency.name && /one|одно|однораз|once/i.test(p.frequency.name));
+        (p.frequency?.name && /one|одно|однораз|once/i.test(p.frequency.name || ''));
 
-      if (isOneTimeFrequency) {
-        if (p.startDate) {
-          const start = new Date(p.startDate);
-          const now = new Date();
-          multiplier = start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth() ? 1 : 0;
-        } else {
-          multiplier = 0;
-        }
-      } else if (p.frequency) {
+      if (isOneTime) return { monthly: 0, isOneTime: true, amount };
+
+      if (p.frequency) {
         const unit = (p.frequency.intervalUnit?.name || '').toLowerCase();
         const val = p.frequency.intervalValue || 1;
-
+        let multiplier = 1;
         if (unit.includes('day') || unit.includes('день') || unit.includes('щодня')) multiplier = 30 / val;
         else if (unit.includes('week') || unit.includes('тиж') || unit.includes('щотижня')) multiplier = 4.33 / val;
         else if (unit.includes('month') || unit.includes('місяц') || unit.includes('щомісяця')) multiplier = 1 / val;
         else if (unit.includes('year') || unit.includes('рік') || unit.includes('щорічно')) multiplier = (1 / 12) / val;
+        return { monthly: amount * multiplier, isOneTime: false, amount };
       }
 
-      if (isIncomeType(typeName)) {
-        inc += amount * multiplier;
-      } else if (isExpenseType(typeName)) {
-        const mExp = amount * multiplier;
-        exp += mExp;
-        const catName = p.category?.name || 'Без категорії';
-        catMap[catName] = (catMap[catName] || 0) + mExp;
+      return { monthly: 0, isOneTime: true, amount };
+    };
+
+    // Build month-by-month amounts (income minus expense)
+    planned.forEach((p) => {
+      const typeName = p.transactionType?.name;
+      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
+
+      if (!isOneTime) {
+        // Recurring: add prorated for current partial month, full for subsequent months
+        if (monthsToForecast > 0) months[0] += monthly * fractionCurrentMonth;
+        for (let i = 1; i < monthsToForecast; i++) months[i] += monthly;
+        if (isExpenseType(typeName)) {
+          const catName = p.category?.name || 'Без категорії';
+          const totalForPeriod = monthly * (fractionCurrentMonth + Math.max(0, monthsToForecast - 1));
+          catMap[catName] = (catMap[catName] || 0) + totalForPeriod;
+        }
+      } else {
+        // One-time: place full amount into its month if within forecast
+        if (!p.startDate) return;
+        const start = new Date(p.startDate);
+        // if start is earlier than today and within current month but before now, skip
+        if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) {
+          return;
+        }
+        // compute month index relative to now
+        const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
+        if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
+        // If in current month and date is within remaining days — include in month 0 fully
+        months[monthIndex] += amount;
+        if (isExpenseType(typeName)) {
+          const catName = p.category?.name || 'Без категорії';
+          catMap[catName] = (catMap[catName] || 0) + amount;
+        }
       }
     });
 
-    return { 
-      monthlyIncome: inc, 
-      monthlyExpense: exp, 
-      monthlySavings: inc - exp,
-      expenseByCategory: catMap
+    // Now compute totals: we must separate income and expense contributions for period totals
+    let periodInc = 0;
+    let periodExp = 0;
+    // Recompute by iterating planned again to attribute to inc/exp across months similar to above
+    planned.forEach((p) => {
+      const typeName = p.transactionType?.name;
+      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
+      if (!isOneTime) {
+        // recurring
+        if (monthsToForecast > 0) {
+          const first = monthly * fractionCurrentMonth;
+          periodInc += isIncomeType(typeName) ? first : 0;
+          periodExp += isExpenseType(typeName) ? first : 0;
+        }
+        const rest = monthly * Math.max(0, monthsToForecast - 1);
+        periodInc += isIncomeType(typeName) ? rest : 0;
+        periodExp += isExpenseType(typeName) ? rest : 0;
+      } else {
+        if (!p.startDate) return;
+        const start = new Date(p.startDate);
+        if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) return;
+        const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
+        if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
+        periodInc += isIncomeType(typeName) ? amount : 0;
+        periodExp += isExpenseType(typeName) ? amount : 0;
+      }
+    });
+
+    const monthsSavingsArr = months.map((m) => m * -1); // placeholder: we'll compute net later
+    // Actually compute net per month (income - expense): we built months as net already (we added both incomes and expenses together?), above we only added monthly into months regardless of sign. Need to recalc months net properly.
+    // To simplify, rebuild monthsNet by iterating planned and adding positive for income, negative for expense.
+    const monthsNet = new Array(monthsToForecast).fill(0);
+    planned.forEach((p) => {
+      const typeName = p.transactionType?.name;
+      const { monthly, isOneTime, amount } = getMonthlyEquivalent(p);
+      const sign = isIncomeType(typeName) ? 1 : isExpenseType(typeName) ? -1 : 0;
+      if (sign === 0) return;
+      if (!isOneTime) {
+        if (monthsToForecast > 0) monthsNet[0] += monthly * fractionCurrentMonth * sign;
+        for (let i = 1; i < monthsToForecast; i++) monthsNet[i] += monthly * sign;
+      } else {
+        if (!p.startDate) return;
+        const start = new Date(p.startDate);
+        if (start < startOfToday && start.getMonth() === now.getMonth() && start.getFullYear() === now.getFullYear()) return;
+        const monthIndex = (start.getFullYear() - now.getFullYear()) * 12 + (start.getMonth() - now.getMonth());
+        if (monthIndex < 0 || monthIndex >= monthsToForecast) return;
+        monthsNet[monthIndex] += amount * sign;
+      }
+    });
+
+    const periodIncFinal = monthsNet.reduce((s, v) => s + (v > 0 ? v : 0), 0);
+    const periodExpFinal = monthsNet.reduce((s, v) => s + (v < 0 ? -v : 0), 0);
+    const periodSavingsFinal = periodIncFinal - periodExpFinal;
+
+    return {
+      monthsSavings: monthsNet,
+      periodIncome: periodIncFinal,
+      periodExpense: periodExpFinal,
+      periodSavings: periodSavingsFinal,
+      expenseByCategory: catMap,
     };
-  }, [planned, convert, selectedCurrencyName]);
+  }, [planned, convert, monthsToForecast, selectedCurrencyName]);
 
   // 2. Waterfall Forecast Logic
   const forecastAims = useMemo(() => {
-    if (monthlySavings <= 0) return []; // Cannot forecast if losing money or break-even
+    // If period savings are non-positive, return empty
+    if (periodSavings <= 0) return [];
 
-    // Get active aims and sort by priority (1 is highest)
+    // Prepare active aims ordered by priority
     const activeAims = aims
       .filter(a => !a.isClosed && (a.amount ?? 0) > (a.progress?.collectedAmount ?? 0))
       .sort((a, b) => (a.priority ?? 999) - (b.priority ?? 999));
 
-    let currentAccumulatedSavings = monthlySavings * monthsToForecast;
-    let currentMonthOffset = 0;
-    
-    return activeAims.map((aim) => {
-      const target = convert(aim.amount ?? 0, aim.currency);
-      const collected = convert(aim.progress?.collectedAmount ?? 0, aim.currency);
-      const remainingToCollect = target - collected;
+    // Clone remaining amounts per aim
+    const remainingMap = activeAims.map((aim) => ({
+      id: aim.id,
+      aim,
+      target: convert(aim.amount ?? 0, aim.currency),
+      collected: convert(aim.progress?.collectedAmount ?? 0, aim.currency),
+      remaining: convert(aim.amount ?? 0, aim.currency) - convert(aim.progress?.collectedAmount ?? 0, aim.currency),
+      allocated: 0,
+      achievedMonth: null as number | null,
+    }));
 
-      // How many months it takes just for this goal given full savings power
-      const monthsNeededForThisGoal = remainingToCollect / monthlySavings;
-      const willBeAchievedInMonth = currentMonthOffset + Math.ceil(monthsNeededForThisGoal);
-
-      // Will it be achieved within the forecasted period?
-      const willAchieveInForecast = remainingToCollect <= currentAccumulatedSavings;
-      
-      let forecastedAdditionalCollection = 0;
-      if (willAchieveInForecast) {
-        forecastedAdditionalCollection = remainingToCollect;
-        currentAccumulatedSavings -= remainingToCollect;
-        currentMonthOffset += monthsNeededForThisGoal;
-      } else {
-        forecastedAdditionalCollection = currentAccumulatedSavings;
-        currentAccumulatedSavings = 0;
+    // Simulate month-by-month allocation using monthsSavings (array of net savings per month)
+    for (let m = 0; m < monthsToForecast; m++) {
+      let available = monthsSavings[m] ?? 0;
+      if (available <= 0) continue;
+      for (const r of remainingMap) {
+        if (r.remaining <= 0) continue;
+        const take = Math.min(r.remaining, available);
+        r.allocated += take;
+        r.remaining -= take;
+        available -= take;
+        if (r.remaining <= 0 && r.achievedMonth === null) r.achievedMonth = m;
+        if (available <= 0) break;
       }
+    }
 
-      // Calculate future date
+    // Map results back to aims
+    return remainingMap.map((r) => {
+      const willAchieveInForecast = r.remaining <= 0;
+      const monthsUntil = r.achievedMonth ?? Math.ceil(monthsToForecast + 0);
       const achievementDate = new Date();
-      achievementDate.setMonth(achievementDate.getMonth() + willBeAchievedInMonth);
-
+      achievementDate.setMonth(achievementDate.getMonth() + (r.achievedMonth ?? monthsToForecast));
       return {
-        ...aim,
-        target,
-        collected,
-        remainingToCollect,
-        forecastedAdditionalCollection,
+        ...r.aim,
+        target: r.target,
+        collected: r.collected,
+        remainingToCollect: r.target - r.collected,
+        forecastedAdditionalCollection: r.allocated,
         willAchieveInForecast,
-        willBeAchievedInMonth,
+        willBeAchievedInMonth: r.achievedMonth ?? -1,
         achievementDateStr: achievementDate.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' }),
-        newTotalCollected: collected + forecastedAdditionalCollection,
-        newProgressPercentage: Math.min(((collected + forecastedAdditionalCollection) / target) * 100, 100)
+        newTotalCollected: r.collected + r.allocated,
+        newProgressPercentage: Math.min(((r.collected + r.allocated) / r.target) * 100, 100),
       };
     });
-  }, [aims, monthlySavings, monthsToForecast, convert, selectedCurrencyName]);
+  }, [aims, monthsSavings, monthsToForecast, convert, selectedCurrencyName, periodSavings]);
 
   const targetDate = useMemo(() => {
     const d = new Date();
@@ -198,28 +279,28 @@ export const Planning: React.FC = () => {
             {/* Savings highlight */}
             <div className="pt-4 border-t border-[#f0f0f0]">
               <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Накопичення</div>
-              <div className={`text-2xl sm:text-3xl font-mono font-bold ${monthlySavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
-                {formatCurrency(monthlySavings * monthsToForecast, 0)} {selectedCurrencyName}
+              <div className={`text-2xl sm:text-3xl font-mono font-bold ${periodSavings > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                {formatCurrency(periodSavings, 0)} {selectedCurrencyName}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Доходів</div>
                 <div className="text-lg font-mono font-bold text-ink">
-                  {formatCurrency(monthlyIncome * monthsToForecast, 0)} {selectedCurrencyName}
+                  {formatCurrency(periodIncome, 0)} {selectedCurrencyName}
                 </div>
               </div>
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Витрат</div>
                 <div className="text-lg font-mono font-bold text-ink">
-                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrencyName}
+                  {formatCurrency(periodExpense, 0)} {selectedCurrencyName}
                 </div>
               </div>
             </div>
           </Card>
 
           {/* Status Alert */}
-          {monthlySavings <= 0 && (
+          {periodSavings <= 0 && (
             <div className="rounded-xl border border-red-200 bg-red-50 p-4 flex gap-3 items-start text-red-700">
               <AlertCircle className="shrink-0 mt-0.5" size={20} />
               <div>
@@ -232,7 +313,7 @@ export const Planning: React.FC = () => {
           )}
 
           {/* Forecast List */}
-          {monthlySavings > 0 && (
+          {periodSavings > 0 && (
             <div>
               <h3 className="text-lg font-semibold text-ink mb-4 flex items-center gap-2">
                 <Target size={20} className="text-primary" />
@@ -324,7 +405,7 @@ export const Planning: React.FC = () => {
                     <div key={cat} className="flex justify-between items-center border-b border-hairline/50 pb-2 last:border-0 last:pb-0">
                       <span className="text-sm font-medium text-[#7a7a7a]">{cat}</span>
                       <span className="font-mono font-semibold text-ink">
-                        {formatCurrency(amount * monthsToForecast, 0)} {selectedCurrencyName}
+                        {formatCurrency(amount, 0)} {selectedCurrencyName}
                       </span>
                     </div>
                   ))
@@ -339,7 +420,7 @@ export const Planning: React.FC = () => {
               <div className="mt-4 pt-4 border-t border-hairline flex justify-between items-center">
                 <span className="text-sm font-semibold text-ink">Всього витрат</span>
                 <span className="text-lg font-mono font-bold text-red-500">
-                  {formatCurrency(monthlyExpense * monthsToForecast, 0)} {selectedCurrencyName}
+                  {formatCurrency(periodExpense, 0)} {selectedCurrencyName}
                 </span>
               </div>
             )}

@@ -124,7 +124,6 @@ export const Dashboard: React.FC = () => {
       const name = String(t?.name ?? '').toLowerCase();
       return name === 'income' || name === 'надходження' || name === 'поповнення' || name === 'дохід';
     });
-    const transferType = types.find((t: any) => (t.name || '').toString().toLowerCase() === TransactionTypeEnum.TRANSFER.toLowerCase());
 
     setTxForm((prev) => ({
       ...prev,
@@ -138,7 +137,7 @@ export const Dashboard: React.FC = () => {
 
   const handleCreateTx = async (e: React.FormEvent) => {
     e.preventDefault();
-    const errors: { amount?: string; sourceId?: string; transactionTypeId?: string } = {};
+    const errors: { amount?: string; sourceId?: string; transactionTypeId?: string; destinationSourceId?: string } = {};
     if (!txForm.amount || Number(txForm.amount) <= 0) errors.amount = 'Сума має бути більшою за 0';
     if (!txForm.sourceId) errors.sourceId = 'Виберіть джерело';
     if (!txForm.transactionTypeId) errors.transactionTypeId = 'Виберіть тип';
