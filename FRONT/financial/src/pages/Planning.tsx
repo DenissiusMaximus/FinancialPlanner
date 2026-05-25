@@ -334,7 +334,7 @@ export const Planning: React.FC = () => {
                         <div key={d.id} className="border border-hairline/50 p-2 rounded-md bg-[#fafafa]">
                           <div className="flex justify-between items-center">
                             <div className="font-medium">{d.name} — {d.type}</div>
-                            <div className="font-mono">{formatCurrency(d.amount, 0)} {d.currency}</div>
+                            <div className="font-mono">{formatCurrency(d.amount, 0)} {typeof d.currency === 'string' ? d.currency : d.currency?.name}</div>
                           </div>
                           <div className="text-[12px] text-[#666] mt-1">{d.frequency} • start: {d.startDate ? new Date(d.startDate).toLocaleDateString('uk-UA') : '-'}</div>
                           <div className="mt-2 grid grid-cols-4 gap-2 text-[12px]">
