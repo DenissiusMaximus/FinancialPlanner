@@ -88,6 +88,8 @@ export const PlannedTransactions: React.FC = () => {
   const [formData, setFormData] = useState<FormState>(emptyForm());
   const [createErrors, setCreateErrors] = useState<Partial<Record<keyof FormState, string>>>({});
   const [editErrors, setEditErrors] = useState<Partial<Record<keyof FormState, string>>>({});
+  const [typeFilter, setTypeFilter] = useState<'all' | 'income' | 'expense'>('all');
+  const [frequencyFilter, setFrequencyFilter] = useState<string>('');
 
   // Queries
   const plannedQuery = useQuery({ queryKey: PLANNED_TX_KEY, queryFn: getPlannedTransactions });
@@ -240,6 +242,34 @@ export const PlannedTransactions: React.FC = () => {
       </div>
     );
   }
+
+  // Client-side filtering and sorting: prefer server-side if available.
+  const filteredPlanned = planned
+    .filter((p) => {
+      if (typeFilter !== 'all') {
+        const tn = (p.transactionType?.name || '').toString().toLowerCase();
+        const isIncome = tn.includes('income') || tn.includes('надход');
+        const isExpense = tn.includes('expense') || tn.includes('витрат');
+        if (typeFilter === 'income' && !isIncome) return false;
+        if (typeFilter === 'expense' && !isExpense) return false;
+      }
+      if (frequencyFilter) {
+        return String(p.frequency?.id) === String(frequencyFilter);
+      }
+      return true;
+    })
+    .sort((a, b) => {
+      // incomes first, then expenses, then others. Use transactionType.name
+      const an = (a.transactionType?.name || '').toString().toLowerCase();
+      const bn = (b.transactionType?.name || '').toString().toLowerCase();
+      const aScore = an.includes('income') || an.includes('надход') ? 0 : an.includes('expense') || an.includes('витрат') ? 1 : 2;
+      const bScore = bn.includes('income') || bn.includes('надход') ? 0 : bn.includes('expense') || bn.includes('витрат') ? 1 : 2;
+      if (aScore !== bScore) return aScore - bScore;
+      // fallback stable sort by startDate
+      const da = new Date(a.startDate ?? 0).getTime();
+      const db = new Date(b.startDate ?? 0).getTime();
+      return da - db;
+    });
 
   const PlannedForm = ({
     errors,
@@ -406,13 +436,28 @@ export const PlannedTransactions: React.FC = () => {
     <div className="w-full">
       <DashboardSection
         title="Планові транзакції"
-        action={<Button onClick={() => { setFormData(emptyForm()); setCreateErrors({}); setIsCreateOpen(true); }}>+ Нова планова транзакція</Button>}
+        action={
+          <div className="flex items-center gap-3">
+            <select value={typeFilter} onChange={(e)=>setTypeFilter(e.target.value as any)} className="px-3 py-2 border border-hairline rounded-lg bg-white">
+              <option value="all">Усі типи</option>
+              <option value="income">Лише надходження</option>
+              <option value="expense">Лише витрати</option>
+            </select>
+            <select value={frequencyFilter} onChange={(e)=>setFrequencyFilter(e.target.value)} className="px-3 py-2 border border-hairline rounded-lg bg-white">
+              <option value="">Всі частоти</option>
+              {frequencies.map((f) => (
+                <option key={f.id} value={f.id}>{getFrequencyLabel(f)}</option>
+              ))}
+            </select>
+            <Button onClick={() => { setFormData(emptyForm()); setCreateErrors({}); setIsCreateOpen(true); }}>+ Нова планова транзакція</Button>
+          </div>
+        }
       >
         {planned.length > 0 ? (
           <div className="w-full">
             {/* Mobile card list */}
             <div className="sm:hidden space-y-2">
-              {planned.map((item) => (
+              {filteredPlanned.map((item) => (
                 <div
                   key={item.id}
                   className="bg-white border border-[#f0f0f0] rounded-xl p-4"
@@ -490,7 +535,7 @@ export const PlannedTransactions: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {planned.map((item) => (
+                  {filteredPlanned.map((item) => (
                     <tr key={item.id} className="border-b border-[#f0f0f0] hover:bg-[#fafafc] transition-colors">
                       <td className="px-4 py-3 text-ink font-medium">{item.name || '—'}</td>
                       <td className="px-4 py-3">
