@@ -13,7 +13,7 @@ import type {
   CreatePlannedTransactionInput,
   FrequencyDto,
 } from '../types/generated';
-import { getTransactionTypeLabel } from '../utils/display-helpers';
+import { getTransactionTypeLabel, getFrequencyLabel } from '../utils/display-helpers';
 
 const PLANNED_TX_KEY = ['/api/PlannedTransaction'];
 const FREQUENCY_KEY = ['/api/Frequency'];
@@ -433,7 +433,7 @@ export const PlannedTransactions: React.FC = () => {
                         )}
                         {item.frequency?.name && (
                           <span className="text-xs text-[#7a7a7a] bg-[#f5f5f7] px-2 py-0.5 rounded-full">
-                            {item.frequency.name}
+                            {getFrequencyLabel(item.frequency)}
                           </span>
                         )}
                       </div>

@@ -16,7 +16,13 @@ import {
   usePatchApiFrequencyId,
   useDeleteApiFrequencyId,
   useGetApiIntervalUnit,
+  useGetApiTransaction,
+  usePostApiTransaction,
+  useGetApiSource,
+  useGetApiTransactionType,
 } from '../api/generated/endpoints';
+import { TransactionTable } from '../components/TransactionTable';
+import { translateIntervalUnitName, getFrequencyLabel } from '../utils/display-helpers';
 
 export const Settings: React.FC = () => {
   const queryClient = useQueryClient();
@@ -55,6 +61,63 @@ export const Settings: React.FC = () => {
   const freqs = Array.isArray(freqsQuery.data) ? freqsQuery.data : [];
   const units = Array.isArray(unitsQuery.data) ? unitsQuery.data : [];
   const isFreqsLoading = freqsQuery.isLoading || unitsQuery.isLoading;
+
+  // Transactions inside settings
+  const [expandCategories, setExpandCategories] = useState(true);
+  const [expandTransactions, setExpandTransactions] = useState(false);
+  const [expandFrequencies, setExpandFrequencies] = useState(false);
+
+  const transactionsQuery = useGetApiTransaction({ Limit: 50 });
+  const sourcesQuery = useGetApiSource();
+  const typesQuery = useGetApiTransactionType();
+  const createTransaction = usePostApiTransaction();
+  const transactions = Array.isArray(transactionsQuery.data?.data)
+    ? transactionsQuery.data.data
+    : Array.isArray(transactionsQuery.data)
+    ? transactionsQuery.data
+    : [];
+  const sources = Array.isArray(sourcesQuery.data) ? sourcesQuery.data : [];
+  const types = Array.isArray(typesQuery.data) ? typesQuery.data : [];
+
+  const [isCreateTxModalOpen, setIsCreateTxModalOpen] = useState(false);
+  const [txForm, setTxForm] = useState({ amount: '', date: '', sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+  const [txErrors, setTxErrors] = useState<any>({});
+
+  const getLocalDatetime = (d?: string) => {
+    const dt = d ? new Date(d) : new Date();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    return `${dt.getFullYear()}-${pad(dt.getMonth()+1)}-${pad(dt.getDate())}T${pad(dt.getHours())}:${pad(dt.getMinutes())}:${pad(dt.getSeconds())}`;
+  };
+
+  const openCreateTx = () => {
+    setTxErrors({});
+    setTxForm({ amount: '', date: getLocalDatetime(), sourceId: '', transactionTypeId: '', categoryId: '', comment: '' });
+    setIsCreateTxModalOpen(true);
+  };
+
+  const validateTx = () => {
+    const errs: any = {};
+    if (!txForm.date) errs.date = 'Оберіть дату';
+    if (!txForm.sourceId) errs.sourceId = 'Виберіть джерело';
+    if (!txForm.transactionTypeId) errs.transactionTypeId = 'Виберіть тип транзакції';
+    if (!txForm.amount || Number(txForm.amount) <= 0) errs.amount = 'Сума має бути більшою за 0';
+    setTxErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
+  const submitCreateTx = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!validateTx()) return;
+    try {
+      const source = sources.find((s:any)=>s.id===Number(txForm.sourceId));
+      await createTransaction.mutateAsync({ data: { amount: Number(txForm.amount), date: txForm.date, sourceId: Number(txForm.sourceId), transactionTypeId: Number(txForm.transactionTypeId), categoryId: txForm.categoryId ? Number(txForm.categoryId) : null, comment: txForm.comment || '', currencyId: source?.currency?.id } });
+      setIsCreateTxModalOpen(false);
+      queryClient.invalidateQueries({ queryKey: ['/api/Transaction'] });
+      transactionsQuery.refetch();
+    } catch (err) {
+      console.error(err);
+    }
+  };
 
   // Category handlers
   const handleOpenCreateCategory = () => {
@@ -182,77 +245,125 @@ export const Settings: React.FC = () => {
   }
 
   return (
-    <div className="w-full space-y-10">
-      {/* Categories section (unchanged UI) */}
-      <div>
-        <div className="flex justify-between items-center mb-6">
-          <div>
-            <h1 className="text-2xl font-bold text-ink">Налаштування</h1>
-            <p className="text-sm text-[#7a7a7a] mt-1">Управляйте категоріями та проміжками (інтервалами)</p>
-          </div>
-          <div className="flex gap-3">
-            <Button onClick={handleOpenCreateCategory}>+ Нова категорія</Button>
-            <Button onClick={handleOpenCreateFreq}>+ Новий проміжок</Button>
-          </div>
+  return (
+    <div className="w-full space-y-6">
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-ink">Налаштування</h1>
+          <p className="text-sm text-[#7a7a7a] mt-1">Керування категоріями та транзакціями</p>
         </div>
+      </div>
 
-        {categories.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {categories.map((category: any) => (
-              <div key={category.id} className="bg-white border border-hairline rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-primary/10 text-primary p-2.5 rounded-xl shrink-0">
-                    <FolderOpen size={20} />
-                  </div>
-                  <h3 className="font-semibold text-ink text-base truncate" title={category.name}>{category.name}</h3>
-                </div>
-
-                <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-hairline">
-                  <button onClick={() => handleOpenEditCategory(category)} className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5 flex items-center justify-center" title="Редагувати"><Pencil size={16} /></button>
-                  <button onClick={() => handleDeleteCategory(category.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
-                </div>
-              </div>
-            ))}
+      {/* Categories accordion */}
+      <div className="bg-white border border-hairline rounded-2xl p-4">
+        <button className="w-full flex items-center justify-between" onClick={() => setExpandCategories((s) => !s)}>
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary p-2 rounded-lg"><FolderOpen size={18} /></div>
+            <div>
+              <div className="font-semibold">Категорії</div>
+              <div className="text-xs text-[#7a7a7a]">Створюйте та видаляйте категорії</div>
+            </div>
           </div>
-        ) : (
-          <EmptyState title="Немає категорій" description="Створіть свою першу категорію для кращої аналітики." action={<Button onClick={handleOpenCreateCategory}>+ Нова категорія</Button>} />
+          <div className="flex items-center gap-3">
+            <Button onClick={(e)=>{ e.stopPropagation(); handleOpenCreateCategory(); }}>+ Додати категорію</Button>
+            <div className="text-sm text-[#7a7a7a]">{expandCategories ? 'Згорнути' : 'Розгорнути'}</div>
+          </div>
+        </button>
+
+        {expandCategories && (
+          <div className="mt-4">
+            {categories.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {categories.map((category: any) => (
+                  <div key={category.id} className="bg-white border border-hairline rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-primary/10 text-primary p-2.5 rounded-xl shrink-0">
+                        <FolderOpen size={20} />
+                      </div>
+                      <h3 className="font-semibold text-ink text-base truncate" title={category.name}>{category.name}</h3>
+                    </div>
+
+                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-hairline">
+                      <button onClick={() => handleDeleteCategory(category.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState title="Немає категорій" description="Створіть свою першу категорію для кращої аналітики." action={<Button onClick={handleOpenCreateCategory}>+ Нова категорія</Button>} />
+            )}
+          </div>
         )}
       </div>
 
-      {/* Frequencies section */}
-      <div>
-        <div className="flex justify-between items-center mb-4">
-          <div>
-            <h2 className="text-xl font-semibold text-ink">Проміжки (Інтервали)</h2>
-            <p className="text-sm text-[#7a7a7a] mt-1">Управляйте проміжками для планових транзакцій та частоти повторення</p>
+      {/* Transactions accordion */}
+      <div className="bg-white border border-hairline rounded-2xl p-4">
+        <button className="w-full flex items-center justify-between" onClick={() => setExpandTransactions((s) => !s)}>
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary p-2 rounded-lg"><FolderOpen size={18} /></div>
+            <div>
+              <div className="font-semibold">Транзакції</div>
+              <div className="text-xs text-[#7a7a7a]">Перегляд останніх транзакцій та додавання нових</div>
+            </div>
           </div>
-        </div>
+          <div className="flex items-center gap-3">
+            <Button onClick={(e)=>{ e.stopPropagation(); openCreateTx(); }}>+ Додати транзакцію</Button>
+            <div className="text-sm text-[#7a7a7a]">{expandTransactions ? 'Згорнути' : 'Розгорнути'}</div>
+          </div>
+        </button>
 
-        {freqs.length > 0 ? (
-          <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-            {freqs.map((f: any) => (
-              <div key={f.id} className="bg-white border border-hairline rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="bg-primary/10 text-primary p-2.5 rounded-xl shrink-0">
-                    <FolderOpen size={20} />
-                  </div>
-                  <div className="min-w-0">
-                    <h3 className="font-semibold text-ink text-base truncate" title={f.name || ''}>{f.name || (f.intervalUnit?.name ? `${f.intervalValue} ${f.intervalUnit?.name}` : 'Одноразовий')}</h3>
-                    <div className="text-xs text-[#7a7a7a] mt-1">
-                      {f.intervalUnit?.name ? `${f.intervalValue ?? ''} ${f.intervalUnit?.name}` : 'Одноразовий'}
+        {expandTransactions && (
+          <div className="mt-4">
+            {transactions.length > 0 ? (
+              <TransactionTable transactions={transactions as any} onDelete={(id)=>{ deleteMutation.mutateAsync({ id }).then(()=>transactionsQuery.refetch()); }} />
+            ) : (
+              <EmptyState title="Немає транзакцій" description="Додайте першу транзакцію" action={<Button onClick={openCreateTx}>+ Нова транзакція</Button>} />
+            )}
+          </div>
+        )}
+      </div>
+
+      {/* Frequencies accordion (optional) */}
+      <div className="bg-white border border-hairline rounded-2xl p-4">
+        <button className="w-full flex items-center justify-between" onClick={() => setExpandFrequencies((s)=>!s)}>
+          <div className="flex items-center gap-3">
+            <div className="bg-primary/10 text-primary p-2 rounded-lg"><FolderOpen size={18} /></div>
+            <div>
+              <div className="font-semibold">Проміжки (Інтервали)</div>
+              <div className="text-xs text-[#7a7a7a]">Управління проміжками повторення</div>
+            </div>
+          </div>
+          <div className="text-sm text-[#7a7a7a]">{expandFrequencies ? 'Згорнути' : 'Розгорнути'}</div>
+        </button>
+
+        {expandFrequencies && (
+          <div className="mt-4">
+            {freqs.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                {freqs.map((f: any) => (
+                  <div key={f.id} className="bg-white border border-hairline rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow group relative overflow-hidden">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="bg-primary/10 text-primary p-2.5 rounded-xl shrink-0">
+                        <FolderOpen size={20} />
+                      </div>
+                      <div className="min-w-0">
+                        <h3 className="font-semibold text-ink text-base truncate" title={f.name || ''}>{getFrequencyLabel(f)}</h3>
+                        <div className="text-xs text-[#7a7a7a] mt-1">
+                          {f.name ? (f.userId === 0 ? getFrequencyLabel(f) : f.name) : (f.intervalUnit?.name ? `${f.intervalValue ?? ''} ${translateIntervalUnitName(f.intervalUnit?.name)}` : 'Одноразовий')}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-hairline">
+                      <button onClick={() => handleDeleteFreq(f.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
                     </div>
                   </div>
-                </div>
-
-                <div className="flex gap-2 justify-end mt-4 pt-4 border-t border-hairline">
-                  <button onClick={() => handleOpenEditFreq(f)} className="text-[#7a7a7a] hover:text-primary transition-colors p-1.5 rounded-lg hover:bg-primary/5 flex items-center justify-center" title="Редагувати"><Pencil size={16} /></button>
-                  <button onClick={() => handleDeleteFreq(f.id)} className="text-[#7a7a7a] hover:text-red-500 transition-colors p-1.5 rounded-lg hover:bg-red-50 flex items-center justify-center" title="Видалити"><Trash2 size={16} /></button>
-                </div>
+                ))}
               </div>
-            ))}
+            ) : (
+              <EmptyState title="Немає проміжків" description="Створіть свій перший проміжок" action={<Button onClick={handleOpenCreateFreq}>+ Новий проміжок</Button>} />
+            )}
           </div>
-        ) : (
-          <EmptyState title="Немає проміжків" description="Створіть свій перший проміжок" action={<Button onClick={handleOpenCreateFreq}>+ Новий проміжок</Button>} />
         )}
       </div>
 
@@ -313,6 +424,59 @@ export const Settings: React.FC = () => {
       </Modal>
 
       <ConfirmModal isOpen={freqToDelete !== null} title="Видалення проміжку" message="Ви впевнені, що хочете видалити цей проміжок?" onConfirm={confirmDeleteFreq} onCancel={() => setFreqToDelete(null)} />
+
+      {/* Create transaction modal */}
+      <Modal isOpen={isCreateTxModalOpen} title="Нова транзакція" onClose={() => setIsCreateTxModalOpen(false)} size="md">
+        <form onSubmit={submitCreateTx} className="space-y-4">
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Тип</label>
+            <select value={txForm.transactionTypeId} onChange={(e)=>setTxForm({...txForm, transactionTypeId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
+              <option value="">Виберіть тип</option>
+              {types.map((t:any)=>(<option key={t.id} value={t.id}>{t.name}</option>))}
+            </select>
+            {txErrors.transactionTypeId && <p className="mt-1 text-xs text-red-500">{txErrors.transactionTypeId}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Сума</label>
+            <input type="number" value={txForm.amount} onChange={(e)=>setTxForm({...txForm, amount: e.target.value})} placeholder="0.00" step="0.01" min="0.01" className="w-full px-4 py-2 border border-hairline rounded-lg" />
+            {txErrors.amount && <p className="mt-1 text-xs text-red-500">{txErrors.amount}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Дата</label>
+            <input type="datetime-local" step="1" value={txForm.date} onChange={(e)=>setTxForm({...txForm, date: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg" />
+            {txErrors.date && <p className="mt-1 text-xs text-red-500">{txErrors.date}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Джерело</label>
+            <select value={txForm.sourceId} onChange={(e)=>setTxForm({...txForm, sourceId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
+              <option value="">Виберіть джерело</option>
+              {sources.map((s:any)=>(<option key={s.id} value={s.id}>{s.name}</option>))}
+            </select>
+            {txErrors.sourceId && <p className="mt-1 text-xs text-red-500">{txErrors.sourceId}</p>}
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Категорія (опціонально)</label>
+            <select value={txForm.categoryId} onChange={(e)=>setTxForm({...txForm, categoryId: e.target.value})} className="w-full px-4 py-2 border border-hairline rounded-lg">
+              <option value="">Без категорії</option>
+              {categories.map((c:any)=>(<option key={c.id} value={c.id}>{c.name}</option>))}
+            </select>
+          </div>
+
+          <div>
+            <label className="block text-sm font-semibold text-ink mb-2">Коментар (опціонально)</label>
+            <textarea value={txForm.comment} onChange={(e)=>setTxForm({...txForm, comment: e.target.value})} rows={3} className="w-full px-4 py-2 border border-hairline rounded-lg" />
+          </div>
+
+          <div className="flex gap-3 pt-4">
+            <Button variant="secondary" onClick={()=>setIsCreateTxModalOpen(false)} type="button">Скасувати</Button>
+            <Button type="submit" isLoading={createTransaction.isPending}>Створити</Button>
+          </div>
+        </form>
+      </Modal>
     </div>
   );
 };

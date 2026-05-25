@@ -103,3 +103,50 @@ export const isIncomeType = (typeName?: string | null): boolean => {
   const key = typeName.toLowerCase();
   return key === TransactionTypeEnum.INCOME.toLowerCase() || key === 'надходження';
 };
+
+// Interval unit translations (English -> Ukrainian)
+const intervalUnitTranslations: Record<string, string> = {
+  day: 'День',
+  'two weeks': '2 тижні',
+  week: 'Тиждень',
+  month: 'Місяць',
+  year: 'Рік',
+};
+
+export const translateIntervalUnitName = (name?: string | null): string => {
+  if (!name) return '';
+  const key = name.toLowerCase();
+  if (key.includes('two') && key.includes('week')) return intervalUnitTranslations['two weeks'];
+  if (key.includes('day') || key.includes('день') || key.includes('щод')) return intervalUnitTranslations['day'];
+  if (key.includes('week') || key.includes('тиж')) return intervalUnitTranslations['week'];
+  if (key.includes('month') || key.includes('міся')) return intervalUnitTranslations['month'];
+  if (key.includes('year') || key.includes('рік') || key.includes('річ')) return intervalUnitTranslations['year'];
+  return name;
+};
+
+// Frequency label helper. If frequency belongs to userId === 0 (base), translate known names.
+export const getFrequencyLabel = (freq?: { name?: string | null; userId?: number | null; intervalValue?: number; intervalUnit?: { name?: string | null } }): string => {
+  if (!freq) return '';
+  const name = freq.name;
+  if (name) {
+    // base frequencies for userId 0 — translate common English names
+    if (freq.userId === 0) {
+      const k = name.toLowerCase();
+      if (k.includes('two') && k.includes('week')) return '2 тижні';
+      if (k.includes('day')) return 'День';
+      if (k.includes('week')) return 'Тиждень';
+      if (k.includes('month')) return 'Місяць';
+      if (k.includes('year')) return 'Рік';
+      return name;
+    }
+    return name;
+  }
+
+  // Fallback to intervalUnit + value
+  if (freq.intervalUnit?.name) {
+    const unit = translateIntervalUnitName(freq.intervalUnit.name);
+    return `${freq.intervalValue ?? ''} ${unit}`.trim();
+  }
+
+  return 'Одноразовий';
+};

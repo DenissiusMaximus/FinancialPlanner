@@ -11,7 +11,6 @@ import { EmptyState } from '../components/EmptyState';
 import {
   useGetApiTransaction,
   usePostApiTransaction,
-  usePatchApiTransactionId,
   useDeleteApiTransactionId,
   useGetApiCategory,
   useGetApiSource,
@@ -62,7 +61,6 @@ export const Transactions: React.FC = () => {
 
   // Mutations
   const createMutation = usePostApiTransaction();
-  const updateMutation = usePatchApiTransactionId();
   const deleteMutation = useDeleteApiTransactionId();
 
   const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
@@ -132,8 +130,7 @@ export const Transactions: React.FC = () => {
     if (!formData.transactionTypeId) errors.transactionTypeId = 'Виберіть тип транзакції';
     if (!formData.amount || Number(formData.amount) <= 0) errors.amount = 'Сума має бути більшою за 0';
 
-    if (mode === 'create') setCreateErrors(errors);
-    else setEditErrors(errors);
+    setCreateErrors(errors);
 
     return Object.keys(errors).length === 0;
   };
@@ -221,12 +218,10 @@ export const Transactions: React.FC = () => {
         <label className="block text-sm font-semibold text-ink mb-2">Тип</label>
         <select
           value={formData.transactionTypeId}
-          onChange={(e) => {
+            onChange={(e) => {
             setFormData({ ...formData, transactionTypeId: e.target.value });
             if (errors.transactionTypeId) {
-              submitLabel === 'Створити'
-                ? setCreateErrors((p) => ({ ...p, transactionTypeId: undefined }))
-                : setEditErrors((p) => ({ ...p, transactionTypeId: undefined }));
+              setCreateErrors((p) => ({ ...p, transactionTypeId: undefined }));
             }
           }}
           className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
@@ -247,9 +242,7 @@ export const Transactions: React.FC = () => {
           onChange={(e) => {
             setFormData({ ...formData, amount: e.target.value });
             if (errors.amount) {
-              submitLabel === 'Створити'
-                ? setCreateErrors((p) => ({ ...p, amount: undefined }))
-                : setEditErrors((p) => ({ ...p, amount: undefined }));
+              setCreateErrors((p) => ({ ...p, amount: undefined }));
             }
           }}
           placeholder="0.00"
@@ -269,9 +262,7 @@ export const Transactions: React.FC = () => {
           onChange={(e) => {
             setFormData({ ...formData, date: e.target.value });
             if (errors.date) {
-              submitLabel === 'Створити'
-                ? setCreateErrors((p) => ({ ...p, date: undefined }))
-                : setEditErrors((p) => ({ ...p, date: undefined }));
+              setCreateErrors((p) => ({ ...p, date: undefined }));
             }
           }}
           className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
@@ -286,9 +277,7 @@ export const Transactions: React.FC = () => {
           onChange={(e) => {
             setFormData({ ...formData, sourceId: e.target.value });
             if (errors.sourceId) {
-              submitLabel === 'Створити'
-                ? setCreateErrors((p) => ({ ...p, sourceId: undefined }))
-                : setEditErrors((p) => ({ ...p, sourceId: undefined }));
+              setCreateErrors((p) => ({ ...p, sourceId: undefined }));
             }
           }}
           className="w-full px-4 py-2 border border-hairline rounded-lg focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary/20 text-[#1d1d1f]"
