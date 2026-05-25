@@ -13,6 +13,7 @@ import type { PlannedTransactionDto, AimDto } from '../types/generated';
 
 export const Planning: React.FC = () => {
   const [monthsToForecast, setMonthsToForecast] = useState<number>(6);
+  const [showDebugMonths, setShowDebugMonths] = useState(false);
   const { convert, selectedCurrencyName } = useCurrencyConvert();
 
   // API Queries
@@ -44,7 +45,6 @@ export const Planning: React.FC = () => {
     const endOfCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0, 23, 59, 59, 999);
     const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const daysRemainingInMonth = (endOfCurrentMonth.getDate() - now.getDate()) + 1;
-    const fractionCurrentMonth = daysRemainingInMonth / daysInCurrentMonth;
 
     // Convert frequency to daily rate using basic unit lengths and intervalValue.
     // Units: day=1, week=7, month=30, year=365. intervalValue multiplies the unit.
@@ -255,6 +255,9 @@ export const Planning: React.FC = () => {
                 {formatCurrency(periodSavings, 0)} {selectedCurrencyName}
               </div>
             </div>
+            <div className="mt-3">
+              <button type="button" onClick={() => setShowDebugMonths(s => !s)} className="text-sm text-primary underline">{showDebugMonths ? 'Сховати' : 'Показати'} розбивку по місяцях</button>
+            </div>
             <div className="grid grid-cols-2 gap-3 pt-2">
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Доходів</div>
@@ -270,6 +273,30 @@ export const Planning: React.FC = () => {
               </div>
             </div>
           </Card>
+
+          {showDebugMonths && (
+            <Card className="bg-white border border-hairline p-4">
+              <h4 className="text-sm font-semibold mb-2">Розбивка по місяцях (debug)</h4>
+              <div className="text-xs text-[#7a7a7a] mb-2">Горизонт: {monthsToForecast} міс.</div>
+              <div className="space-y-2">
+                {monthsSavings.map((amt, i) => {
+                  const d = new Date();
+                  const monthIndex = d.getMonth() + i;
+                  const year = d.getFullYear() + Math.floor(monthIndex / 12);
+                  const month = monthIndex % 12;
+                  const startDay = i === 0 ? d.getDate() : 1;
+                  const start = new Date(year, month, startDay);
+                  const end = new Date(year, month + 1, 0);
+                  return (
+                    <div key={i} className="flex justify-between items-center">
+                      <div className="text-[13px] text-[#444]">{start.toLocaleDateString('uk-UA')} — {end.toLocaleDateString('uk-UA')}</div>
+                      <div className="font-mono text-sm">{formatCurrency(amt, 0)} {selectedCurrencyName}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          )}
 
           {/* Status Alert */}
           {periodSavings <= 0 && (
