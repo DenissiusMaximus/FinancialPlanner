@@ -14,6 +14,8 @@ import type {
   FrequencyDto,
 } from '../types/generated';
 import { getTransactionTypeLabel, getFrequencyLabel, isIncomeType, isExpenseType } from '../utils/display-helpers';
+import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
+import { formatCurrency } from '../utils/formatters';
 
 const PLANNED_TX_KEY = ['/api/PlannedTransaction'];
 const FREQUENCY_KEY = ['/api/Frequency'];
@@ -139,6 +141,51 @@ export const PlannedTransactions: React.FC = () => {
   const currencies = (Array.isArray(currenciesRaw?.data) ? currenciesRaw.data : Array.isArray(currenciesRaw) ? currenciesRaw : []) as any[];
 
   const isLoading = plannedQuery.isLoading || frequencyQuery.isLoading || sourcesQuery.isLoading || currenciesQuery.isLoading;
+
+  const { convert, selectedCurrencyName } = useCurrencyConvert();
+
+  // Compute monthly-equivalent totals for filtered planned transactions
+  const now = new Date();
+  const daysInCurrentMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+
+  const getMonthlyEquivalent = (p: PlannedTransactionDto) => {
+    const amountConv = convert(p.amount ?? 0, p.currency);
+    const isOneTime =
+      !p.frequency ||
+      (!!p.frequency.intervalValue && p.frequency.intervalValue >= 9999) ||
+      (p.frequency?.name && /one|одно|однораз|once/i.test(p.frequency.name || ''));
+
+    if (!isOneTime) {
+      const unitName = (p.frequency?.intervalUnit?.name || '').toString().toLowerCase();
+      const val = p.frequency?.intervalValue || 1;
+      let unitDays = 30;
+      if (unitName.includes('day') || unitName.includes('день') || unitName.includes('щод')) unitDays = 1;
+      else if (unitName.includes('week') || unitName.includes('тиж')) unitDays = 7;
+      else if (unitName.includes('month') || unitName.includes('міся')) unitDays = 30;
+      else if (unitName.includes('year') || unitName.includes('рік') || unitName.includes('річ')) unitDays = 365;
+
+      const intervalDays = unitDays * (val || 1);
+      const dailyRate = intervalDays > 0 ? amountConv / intervalDays : 0;
+      return dailyRate * daysInCurrentMonth;
+    }
+
+    // one-time: include only if scheduled in current month
+    if (!p.startDate) return 0;
+    const start = new Date(p.startDate);
+    if (start.getFullYear() === now.getFullYear() && start.getMonth() === now.getMonth()) {
+      return amountConv;
+    }
+    return 0;
+  };
+
+  let monthlyIncomeTotal = 0;
+  let monthlyExpenseTotal = 0;
+  filteredPlanned.forEach((p) => {
+    const monthly = getMonthlyEquivalent(p as PlannedTransactionDto);
+    const tn = (p.transactionType?.name || '').toString();
+    if (isIncomeType(tn)) monthlyIncomeTotal += monthly;
+    else if (isExpenseType(tn)) monthlyExpenseTotal += monthly;
+  });
 
   const validate = (mode: 'create' | 'edit') => {
     const errors: Partial<Record<keyof FormState, string>> = {};
@@ -459,6 +506,17 @@ export const PlannedTransactions: React.FC = () => {
           </div>
         }
       >
+        <div className="mb-4 flex gap-4">
+          <div className="flex-1 px-4 py-3 bg-white border rounded-lg">
+            <div className="text-xs text-[#7a7a7a]">Очікувані щомісячні доходи</div>
+            <div className="font-mono font-bold text-green-600">{formatCurrency(monthlyIncomeTotal, 0)} {selectedCurrencyName}</div>
+          </div>
+          <div className="flex-1 px-4 py-3 bg-white border rounded-lg">
+            <div className="text-xs text-[#7a7a7a]">Очікувані щомісячні витрати</div>
+            <div className="font-mono font-bold text-red-500">{formatCurrency(monthlyExpenseTotal, 0)} {selectedCurrencyName}</div>
+          </div>
+        </div>
+
         {planned.length > 0 ? (
           <div className="w-full">
             {/* Mobile card list */}

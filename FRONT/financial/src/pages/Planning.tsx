@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Target, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
+import { Target, CheckCircle2, Calendar, AlertCircle, ChevronDown, ChevronUp, Activity } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -13,7 +13,7 @@ import type { PlannedTransactionDto, AimDto } from '../types/generated';
 
 export const Planning: React.FC = () => {
   const [monthsToForecast, setMonthsToForecast] = useState<number>(6);
-  const [showDebugMonths, setShowDebugMonths] = useState(false);
+  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
   const { convert, selectedCurrencyName } = useCurrencyConvert();
 
   // API Queries
@@ -316,10 +316,7 @@ export const Planning: React.FC = () => {
                 {formatCurrency(periodSavings, 0)} {selectedCurrencyName}
               </div>
             </div>
-            <div className="mt-3">
-              <button type="button" onClick={() => setShowDebugMonths(s => !s)} className="text-sm text-primary underline">{showDebugMonths ? 'Сховати' : 'Показати'} розбивку по місяцях</button>
-            </div>
-            <div className="grid grid-cols-2 gap-3 pt-2">
+            <div className="grid grid-cols-2 gap-3 pt-4 mt-4 border-t border-hairline">
               <div>
                 <div className="text-xs font-semibold text-[#7a7a7a] uppercase mb-1">Всього Доходів</div>
                 <div className="text-lg font-mono font-bold text-ink">
@@ -333,49 +330,122 @@ export const Planning: React.FC = () => {
                 </div>
               </div>
             </div>
+
+            <div className="mt-5 pt-3 border-t border-hairline flex justify-center">
+              <button 
+                type="button" 
+                onClick={() => setShowDetailedBreakdown(s => !s)} 
+                className="flex items-center gap-1.5 text-sm font-semibold text-primary hover:opacity-80 transition-opacity"
+              >
+                {showDetailedBreakdown ? 'Приховати детальну розбивку' : 'Показати детальну розбивку'}
+                {showDetailedBreakdown ? <ChevronUp size={16} /> : <ChevronDown size={16} />}
+              </button>
+            </div>
           </Card>
 
-          {showDebugMonths && (
-            <Card className="bg-white border border-hairline p-4">
-              <h4 className="text-sm font-semibold mb-2">Розбивка по місяцях (debug)</h4>
-              <div className="text-xs text-[#7a7a7a] mb-2">Горизонт: {monthsToForecast} міс.</div>
-                  <div className="space-y-2">
-                    {monthsSavings.map((amt, i) => {
-                      const d = new Date();
-                      const monthIndex = d.getMonth() + i;
-                      const year = d.getFullYear() + Math.floor(monthIndex / 12);
-                      const month = monthIndex % 12;
-                      const startDay = i === 0 ? d.getDate() : 1;
-                      const start = new Date(year, month, startDay);
-                      const end = new Date(year, month + 1, 0);
-                      return (
-                        <div key={i} className="flex justify-between items-center">
-                          <div className="text-[13px] text-[#444]">{start.toLocaleDateString('uk-UA')} — {end.toLocaleDateString('uk-UA')}</div>
-                          <div className="font-mono text-sm">{formatCurrency(amt, 0)} {selectedCurrencyName}</div>
+          {showDetailedBreakdown && (
+            <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
+              {/* Monthly Summary */}
+              <Card className="bg-white border border-hairline p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Calendar size={20} className="text-primary" />
+                  <h3 className="text-lg font-semibold text-ink">Місячний баланс</h3>
+                </div>
+                <div className="space-y-3">
+                  {monthsSavings.map((amt, i) => {
+                    const d = new Date();
+                    const monthIndex = d.getMonth() + i;
+                    const year = d.getFullYear() + Math.floor(monthIndex / 12);
+                    const month = monthIndex % 12;
+                    const startDay = i === 0 ? d.getDate() : 1;
+                    const start = new Date(year, month, startDay);
+                    const end = new Date(year, month + 1, 0);
+                    
+                    const monthName = start.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
+                    const periodStr = i === 0 
+                      ? `${start.getDate()} — ${end.getDate()} ${start.toLocaleDateString('uk-UA', { month: 'long' }).split(' ')[0]}` 
+                      : 'Цілий місяць';
+                      
+                    const isPositive = amt > 0;
+                    const isNegative = amt < 0;
+
+                    return (
+                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-xl bg-[#f9f9fb] border border-hairline/50 gap-2">
+                        <div>
+                          <div className="text-sm font-semibold capitalize text-ink">{monthName}</div>
+                          <div className="text-xs text-[#7a7a7a] mt-0.5">{periodStr}</div>
                         </div>
-                      );
-                    })}
-                  </div>
-                  <div className="mt-4">
-                    <h5 className="text-sm font-semibold mb-2">Деталі планових транзакцій (debug)</h5>
-                    <div className="space-y-2 text-xs">
-                      {debugDetails.map((d: any) => (
-                        <div key={d.id} className="border border-hairline/50 p-2 rounded-md bg-[#fafafa]">
-                          <div className="flex justify-between items-center">
-                            <div className="font-medium">{d.name} — {d.type}</div>
-                            <div className="font-mono">{formatCurrency(d.amount, 0)} {typeof d.currency === 'string' ? d.currency : d.currency?.name}</div>
+                        <div className={`font-mono font-bold text-base ${isPositive ? 'text-green-600' : isNegative ? 'text-red-500' : 'text-ink'}`}>
+                          {amt > 0 ? '+' : ''}{formatCurrency(amt, 0)} {selectedCurrencyName}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+
+              {/* Detailed Transactions */}
+              <Card className="bg-white border border-hairline p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <Activity size={20} className="text-primary" />
+                  <h3 className="text-lg font-semibold text-ink">Вплив транзакцій</h3>
+                </div>
+                
+                <div className="space-y-4">
+                  {debugDetails.map((d: any) => {
+                    const isExp = isExpenseType(d.type);
+                    const isInc = isIncomeType(d.type);
+                    
+                    return (
+                      <div key={d.id} className="border border-hairline p-4 rounded-xl flex flex-col gap-3 hover:border-hairline hover:shadow-sm transition-all">
+                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
+                          <div>
+                            <div className="font-semibold text-sm text-ink">{d.name}</div>
+                            <div className="text-xs text-[#7a7a7a] mt-1 flex flex-wrap items-center gap-1.5">
+                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase ${isExp ? 'bg-red-50 text-red-600' : isInc ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
+                                {d.type}
+                              </span>
+                              <span className="text-[#d1d1d6]">•</span>
+                              <span>{d.frequency}</span>
+                              {d.startDate && (
+                                <>
+                                  <span className="text-[#d1d1d6]">•</span>
+                                  <span>з {new Date(d.startDate).toLocaleDateString('uk-UA')}</span>
+                                </>
+                              )}
+                            </div>
                           </div>
-                          <div className="text-[12px] text-[#666] mt-1">{d.frequency} • start: {d.startDate ? new Date(d.startDate).toLocaleDateString('uk-UA') : '-'}</div>
-                          <div className="mt-2 grid grid-cols-4 gap-2 text-[12px]">
-                            {d.perMonthContribs.map((c: number, idx: number) => (
-                              <div key={idx} className="text-right">{formatCurrency(c, 0)}</div>
-                            ))}
+                          <div className={`font-mono text-sm font-bold mt-1 sm:mt-0 ${isExp ? 'text-red-500' : isInc ? 'text-green-600' : 'text-ink'}`}>
+                            {formatCurrency(d.amount, 0)} {typeof d.currency === 'string' ? d.currency : d.currency?.name}
                           </div>
                         </div>
-                      ))}
-                    </div>
-                  </div>
-            </Card>
+                        
+                        <div className="mt-2 pt-3 border-t border-hairline/50">
+                          <div className="text-[11px] font-semibold text-[#7a7a7a] uppercase mb-2">Навантаження по місяцях</div>
+                          {/* Horizontal scroll container with hidden scrollbar styling */}
+                          <div className="flex overflow-x-auto pb-2 gap-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
+                            {d.perMonthContribs.map((c: number, idx: number) => {
+                              const dObj = new Date();
+                              const monthIndex = dObj.getMonth() + idx;
+                              const mName = new Date(dObj.getFullYear(), monthIndex, 1).toLocaleDateString('uk-UA', { month: 'short' });
+                              const yearStr = new Date(dObj.getFullYear(), monthIndex, 1).toLocaleDateString('uk-UA', { year: '2-digit' });
+                              return (
+                                <div key={idx} className="flex-shrink-0 bg-[#f5f5f7] rounded-lg p-2 min-w-[76px] text-center flex flex-col gap-1">
+                                  <span className="text-[10px] font-medium text-[#7a7a7a] capitalize">{mName} '{yearStr}</span>
+                                  <span className={`font-mono text-xs font-semibold ${c !== 0 ? (c > 0 ? 'text-green-600' : 'text-red-500') : 'text-[#a0a0a0]'}`}>
+                                    {formatCurrency(c, 0)}
+                                  </span>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </Card>
+            </div>
           )}
 
           {/* Status Alert */}
