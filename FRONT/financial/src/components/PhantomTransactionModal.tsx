@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X } from 'lucide-react';
+import { Modal } from './Modal';
 import type { PhantomTransaction } from '../hooks/usePhantomTransactions';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
 
@@ -52,8 +52,6 @@ export const PhantomTransactionModal: React.FC<PhantomTransactionModalProps> = (
     }
   }, [isOpen, editingTransaction]);
 
-  if (!isOpen) return null;
-
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!name || !amount) return;
@@ -86,21 +84,8 @@ export const PhantomTransactionModal: React.FC<PhantomTransactionModalProps> = (
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-ink/40 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="bg-white rounded-3xl w-full max-w-md shadow-2xl overflow-hidden animate-in zoom-in-95 duration-200">
-        <div className="flex justify-between items-center p-5 border-b border-hairline">
-          <h2 className="text-xl font-semibold text-ink">
-            {editingTransaction ? 'Редагувати фантом' : 'Нова фантомна транзакція'}
-          </h2>
-          <button 
-            onClick={onClose}
-            className="p-2 text-[#7a7a7a] hover:bg-[#f5f5f7] rounded-full transition-colors"
-          >
-            <X size={20} />
-          </button>
-        </div>
-
-        <form onSubmit={handleSubmit} className="p-5 space-y-5">
+    <Modal isOpen={isOpen} onClose={onClose} title={editingTransaction ? 'Редагувати фантом' : 'Нова фантомна транзакція'} size="md">
+      <form onSubmit={handleSubmit} className="p-0 sm:p-5 space-y-5">
           {/* Type Selector (Segmented Control) */}
           <div className="flex p-1 bg-[#f5f5f7] rounded-xl">
             {(['Витрата', 'Дохід'] as const).map((t) => (
@@ -161,7 +146,6 @@ export const PhantomTransactionModal: React.FC<PhantomTransactionModalProps> = (
                 value={frequency}
                 onChange={(e) => setFrequency(e.target.value)}
                 className="w-full px-4 py-3 rounded-xl border border-[#e5e5ea] bg-white focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all text-ink appearance-none"
-                style={{ backgroundImage: `url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%237a7a7a'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path সীম>%3C/svg%3E")`, backgroundPosition: 'right 12px center', backgroundRepeat: 'no-repeat', backgroundSize: '16px' }}
               >
                 <option value="Одноразово">Одноразово</option>
                 <option value="Щодня">Щодня</option>

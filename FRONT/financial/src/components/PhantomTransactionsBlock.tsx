@@ -33,7 +33,6 @@ export const PhantomTransactionsBlock: React.FC<PhantomTransactionsBlockProps> =
               <Ghost size={20} />
             </div>
             <h3 className="text-xl font-semibold text-ink">Фантомні транзакції</h3>
-            <span className="bg-primary text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wider">Beta</span>
           </div>
           <p className="text-sm text-[#7a7a7a]">
             Моделюйте ситуації (наприклад, "купівля джинсів") без впливу на реальну базу даних. Дані зникнуть завтра.
@@ -68,7 +67,7 @@ export const PhantomTransactionsBlock: React.FC<PhantomTransactionsBlockProps> =
                 <Sparkles size={24} className="text-[#a0a0a0]" />
               </div>
               <h5 className="font-semibold text-ink mb-1">Немає фантомних транзакцій</h5>
-              <p className="text-sm text-[#7a7a7a] max-w-sm mx-auto">
+              <p className="text-sm text-[#7a7a7a] max-w-lg mx-auto">
                 Додайте фантомні витрати або доходи, щоб побачити, як вони вплинуть на ваші цілі та накопичення.
               </p>
             </div>
