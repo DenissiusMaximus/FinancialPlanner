@@ -1,6 +1,6 @@
 import React, { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { Target, CheckCircle2, Calendar, AlertCircle, ChevronDown, ChevronUp, Activity } from 'lucide-react';
+import { Target, CheckCircle2, Calendar, AlertCircle } from 'lucide-react';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
 import { EmptyState } from '../components/EmptyState';
@@ -17,7 +17,7 @@ import type { PlannedTransactionDto, AimDto } from '../types/generated';
 
 export const Planning: React.FC = () => {
   const [monthsToForecast, setMonthsToForecast] = useState<number>(6);
-  const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
+  const [selectedMonthIndex, setSelectedMonthIndex] = useState<number>(0);
   const { convert, selectedCurrencyName } = useCurrencyConvert();
 
   const { phantoms, addPhantom, editPhantom, deletePhantom, togglePhantom } = usePhantomTransactions();
@@ -44,7 +44,7 @@ export const Planning: React.FC = () => {
   ) as PlannedTransactionDto[];
 
   // 1. Calculate per-month equivalents and per-period totals
-  const { monthsSavings, monthsIncome, monthsExpense, periodIncome, periodExpense, periodSavings, expenseByCategory, debugDetails } = useMemo(() => {
+  const { monthsSavings, monthsIncome, monthsExpense, periodIncome, periodExpense, periodSavings, expenseByCategory } = useMemo(() => {
     const monthsNet: number[] = new Array(monthsToForecast).fill(0);
     const monthsIncomeArr: number[] = new Array(monthsToForecast).fill(0);
     const monthsExpenseArr: number[] = new Array(monthsToForecast).fill(0);
@@ -221,7 +221,6 @@ export const Planning: React.FC = () => {
       periodExpense: periodExpFinal,
       periodSavings: periodSavingsFinal,
       expenseByCategory: catMap,
-      debugDetails: debugArr,
     };
   }, [planned, phantoms, convert, monthsToForecast, selectedCurrencyName]);
 
@@ -360,17 +359,6 @@ export const Planning: React.FC = () => {
                 </div>
               </div>
             </div>
-
-            <div className="mt-6 flex justify-center">
-              <button 
-                type="button" 
-                onClick={() => setShowDetailedBreakdown(s => !s)} 
-                className="w-full sm:w-auto flex items-center justify-center gap-2 text-sm font-semibold text-primary bg-primary/10 px-5 py-3 rounded-xl hover:bg-primary/20 transition-colors active:scale-[0.98]"
-              >
-                {showDetailedBreakdown ? 'Приховати розбивку по місяцям' : 'Показати розбивку по місяцям'}
-                {showDetailedBreakdown ? <ChevronUp size={18} /> : <ChevronDown size={18} />}
-              </button>
-            </div>
           </Card>
 
           <PhantomTransactionsBlock 
@@ -394,128 +382,84 @@ export const Planning: React.FC = () => {
             }}
           />
 
-          {showDetailedBreakdown && (
-            <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
-              {/* Monthly Summary */}
-              <Card className="bg-white border border-hairline p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Calendar size={20} className="text-primary" />
-                  <h3 className="text-lg font-semibold text-ink">Місячний баланс</h3>
-                </div>
-                <div className="space-y-3">
-                  {monthsSavings.map((amt, i) => {
-                    const d = new Date();
-                    const monthIndex = d.getMonth() + i;
-                    const year = d.getFullYear() + Math.floor(monthIndex / 12);
-                    const month = monthIndex % 12;
-                    const startDay = i === 0 ? d.getDate() : 1;
-                    const start = new Date(year, month, startDay);
-                    const end = new Date(year, month + 1, 0);
-                    
-                    const monthName = start.toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' });
-                    const periodStr = i === 0 
-                      ? `${start.getDate()} — ${end.getDate()} ${start.toLocaleDateString('uk-UA', { month: 'long' }).split(' ')[0]}` 
-                      : 'Цілий місяць';
-                      
-                    const isPositive = amt > 0;
-                    const isNegative = amt < 0;
+          <Card className="bg-white border border-hairline p-5">
+            <div className="flex items-center gap-2 mb-4">
+              <Calendar size={20} className="text-primary" />
+              <h3 className="text-lg font-semibold text-ink">Місячний прогноз</h3>
+            </div>
+            
+            {/* Horizontal Scroll for Months */}
+            <div 
+              className="flex overflow-x-auto gap-3 pb-2 -mx-1 px-1" 
+              style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            >
+              {monthsSavings.map((amt, i) => {
+                const d = new Date();
+                const monthIndex = d.getMonth() + i;
+                const year = d.getFullYear() + Math.floor(monthIndex / 12);
+                const month = monthIndex % 12;
+                
+                const monthName = new Date(year, month, 1).toLocaleDateString('uk-UA', { month: 'short', year: 'numeric' });
+                const isSelected = i === selectedMonthIndex;
+                const isPositive = amt > 0;
+                
+                return (
+                  <button
+                    key={i}
+                    onClick={() => setSelectedMonthIndex(i)}
+                    className={`flex-shrink-0 flex flex-col items-center justify-center p-3 rounded-2xl border transition-all min-w-[100px] ${
+                      isSelected 
+                        ? 'border-primary bg-primary text-white shadow-md' 
+                        : `bg-white hover:bg-[#f9f9fb] ${isPositive ? 'border-green-200' : 'border-red-200'}`
+                    }`}
+                  >
+                    <span className={`text-xs font-semibold capitalize mb-1 ${isSelected ? 'text-white/90' : 'text-[#7a7a7a]'}`}>
+                      {monthName}
+                    </span>
+                    <span className={`font-mono font-bold text-sm ${isSelected ? 'text-white' : (isPositive ? 'text-green-600' : 'text-red-500')}`}>
+                      {amt > 0 ? '+' : ''}{formatCurrency(amt, 0)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
-                    return (
-                      <div key={i} className="flex flex-col sm:flex-row sm:items-center justify-between p-4 rounded-xl bg-[#f9f9fb] border border-hairline/50 gap-4">
-                        <div className="flex-1">
-                          <div className="text-sm font-semibold capitalize text-ink mb-1">{monthName}</div>
-                          <div className="text-xs text-[#7a7a7a]">{periodStr}</div>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm font-mono whitespace-nowrap">
-                          <div className="text-green-600 flex flex-col items-end">
-                            <span className="text-[10px] text-green-600/70 font-sans uppercase font-bold leading-none mb-1">Доходи</span>
-                            +{formatCurrency(monthsIncome[i] || 0, 0)}
-                          </div>
-                          <div className="text-red-500 flex flex-col items-end">
-                            <span className="text-[10px] text-red-500/70 font-sans uppercase font-bold leading-none mb-1">Витрати</span>
-                            -{formatCurrency(monthsExpense[i] || 0, 0)}
-                          </div>
-                          <div className={`flex flex-col items-end border-l border-hairline pl-4 ml-2 ${isPositive ? 'text-ink' : isNegative ? 'text-red-500' : 'text-ink'}`}>
-                            <span className="text-[10px] text-[#7a7a7a] font-sans uppercase font-bold leading-none mb-1">Баланс</span>
-                            <span className="font-bold text-base">{amt > 0 ? '+' : ''}{formatCurrency(amt, 0)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </Card>
-
-              {/* Detailed Transactions */}
-              <Card className="bg-white border border-hairline p-5">
-                <div className="flex items-center gap-2 mb-4">
-                  <Activity size={20} className="text-primary" />
-                  <h3 className="text-lg font-semibold text-ink">Вплив транзакцій</h3>
+            {/* Selected Month Inline Detail */}
+            {monthsSavings[selectedMonthIndex] !== undefined && (
+              <div className="mt-6 pt-5 border-t border-hairline animate-in fade-in slide-in-from-top-2 duration-300">
+                <div className="flex items-center justify-between mb-4">
+                  <h4 className="text-sm font-semibold text-ink">
+                    Деталі за {new Date(
+                      new Date().getFullYear() + Math.floor((new Date().getMonth() + selectedMonthIndex) / 12),
+                      (new Date().getMonth() + selectedMonthIndex) % 12,
+                      1
+                    ).toLocaleDateString('uk-UA', { month: 'long', year: 'numeric' })}
+                  </h4>
                 </div>
                 
-                <div className="space-y-4">
-                  {debugDetails.map((d: any) => {
-                    const isExp = isExpenseType(d.type);
-                    const isInc = isIncomeType(d.type);
-                    
-                    return (
-                      <div key={d.id} className="border border-hairline p-4 rounded-xl flex flex-col gap-3 hover:border-hairline hover:shadow-sm transition-all">
-                        <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
-                          <div>
-                            <div className="font-semibold text-sm text-ink flex items-center gap-2">
-                              {d.name}
-                              {(d as any).phantomId && (
-                                <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-md font-bold uppercase">
-                                  Фантом
-                                </span>
-                              )}
-                            </div>
-                            <div className="text-xs text-[#7a7a7a] mt-1 flex flex-wrap items-center gap-1.5">
-                              <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase ${isExp ? 'bg-red-50 text-red-600' : isInc ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
-                                {d.type}
-                              </span>
-                              <span className="text-[#d1d1d6]">•</span>
-                              <span>{d.frequency}</span>
-                              {d.startDate && (
-                                <>
-                                  <span className="text-[#d1d1d6]">•</span>
-                                  <span>з {new Date(d.startDate).toLocaleDateString('uk-UA')}</span>
-                                </>
-                              )}
-                            </div>
-                          </div>
-                          <div className={`font-mono text-sm font-bold mt-1 sm:mt-0 ${isExp ? 'text-red-500' : isInc ? 'text-green-600' : 'text-ink'}`}>
-                            {formatCurrency(d.amount, 0)} {typeof d.currency === 'string' ? d.currency : d.currency?.name}
-                          </div>
-                        </div>
-                        
-                        <div className="mt-2 pt-3 border-t border-hairline/50">
-                          <div className="text-[11px] font-semibold text-[#7a7a7a] uppercase mb-2">Навантаження по місяцях</div>
-                          {/* Horizontal scroll container with hidden scrollbar styling */}
-                          <div className="flex overflow-x-auto pb-2 gap-2" style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}>
-                            {d.perMonthContribs.map((c: number, idx: number) => {
-                              const dObj = new Date();
-                              const monthIndex = dObj.getMonth() + idx;
-                              const mName = new Date(dObj.getFullYear(), monthIndex, 1).toLocaleDateString('uk-UA', { month: 'short' });
-                              const yearStr = new Date(dObj.getFullYear(), monthIndex, 1).toLocaleDateString('uk-UA', { year: '2-digit' });
-                              return (
-                                <div key={idx} className="flex-shrink-0 bg-[#f5f5f7] rounded-lg p-2 min-w-[76px] text-center flex flex-col gap-1">
-                                  <span className="text-[10px] font-medium text-[#7a7a7a] capitalize">{mName} '{yearStr}</span>
-                                  <span className={`font-mono text-xs font-semibold ${c !== 0 ? (c > 0 ? 'text-green-600' : 'text-red-500') : 'text-[#a0a0a0]'}`}>
-                                    {formatCurrency(c, 0)}
-                                  </span>
-                                </div>
-                              );
-                            })}
-                          </div>
-                        </div>
-                      </div>
-                    );
-                  })}
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                  <div className="bg-[#f9f9fb] p-4 rounded-xl border border-hairline/50">
+                    <div className="text-[10px] text-[#7a7a7a] font-sans uppercase font-bold leading-none mb-2">Доходи</div>
+                    <div className="text-green-600 font-mono font-bold text-lg">
+                      +{formatCurrency(monthsIncome[selectedMonthIndex] || 0, 0)}
+                    </div>
+                  </div>
+                  <div className="bg-[#f9f9fb] p-4 rounded-xl border border-hairline/50">
+                    <div className="text-[10px] text-[#7a7a7a] font-sans uppercase font-bold leading-none mb-2">Витрати</div>
+                    <div className="text-red-500 font-mono font-bold text-lg">
+                      -{formatCurrency(monthsExpense[selectedMonthIndex] || 0, 0)}
+                    </div>
+                  </div>
+                  <div className={`col-span-2 md:col-span-1 bg-[#f9f9fb] p-4 rounded-xl border border-hairline/50`}>
+                    <div className="text-[10px] text-[#7a7a7a] font-sans uppercase font-bold leading-none mb-2">Баланс</div>
+                    <div className={`font-mono font-bold text-lg ${monthsSavings[selectedMonthIndex] > 0 ? 'text-green-600' : 'text-red-500'}`}>
+                      {monthsSavings[selectedMonthIndex] > 0 ? '+' : ''}{formatCurrency(monthsSavings[selectedMonthIndex], 0)}
+                    </div>
+                  </div>
                 </div>
-              </Card>
-            </div>
-          )}
+              </div>
+            )}
+          </Card>
 
           {/* Status Alert */}
           {periodSavings <= 0 && (

@@ -190,7 +190,7 @@ export const PhantomTransactionModal: React.FC<PhantomTransactionModalProps> = (
               type="submit"
               className="w-full bg-primary text-white font-semibold py-3.5 rounded-xl hover:bg-primary/90 active:scale-[0.98] transition-all shadow-sm shadow-primary/20"
             >
-              {editingTransaction ? 'Зберегти зміни' : 'Створити фантом'}
+              {editingTransaction ? 'Зберегти зміни' : 'Створити фантомну транзакцію'}
             </button>
           </div>
         </form>
