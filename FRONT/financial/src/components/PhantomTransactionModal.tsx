@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Calendar as CalendarIcon } from 'lucide-react';
+import { X } from 'lucide-react';
 import type { PhantomTransaction } from '../hooks/usePhantomTransactions';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
 

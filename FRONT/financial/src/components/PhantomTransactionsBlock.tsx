@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus, Ghost, Trash2, Edit2, X, Sparkles, Check, ChevronDown, ChevronUp } from 'lucide-react';
+import { Plus, Ghost, Trash2, Edit2, Sparkles, ChevronDown, ChevronUp } from 'lucide-react';
 import type { PhantomTransaction } from '../hooks/usePhantomTransactions';
 import { formatCurrency } from '../utils/formatters';
 import { Card } from './Card';
