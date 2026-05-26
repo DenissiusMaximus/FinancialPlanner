@@ -9,12 +9,20 @@ import { useGetApiAim } from '../api/generated/endpoints';
 import { formatCurrency } from '../utils/formatters';
 import { isIncomeType, isExpenseType } from '../utils/display-helpers';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
+import { PhantomTransactionsBlock } from '../components/PhantomTransactionsBlock';
+import { PhantomTransactionModal } from '../components/PhantomTransactionModal';
+import { usePhantomTransactions } from '../hooks/usePhantomTransactions';
+import type { PhantomTransaction } from '../hooks/usePhantomTransactions';
 import type { PlannedTransactionDto, AimDto } from '../types/generated';
 
 export const Planning: React.FC = () => {
   const [monthsToForecast, setMonthsToForecast] = useState<number>(6);
   const [showDetailedBreakdown, setShowDetailedBreakdown] = useState(false);
   const { convert, selectedCurrencyName } = useCurrencyConvert();
+
+  const { phantoms, addPhantom, editPhantom, deletePhantom, togglePhantom } = usePhantomTransactions();
+  const [isPhantomModalOpen, setIsPhantomModalOpen] = useState(false);
+  const [editingPhantom, setEditingPhantom] = useState<PhantomTransaction | null>(null);
 
   // API Queries
   const aimsQuery = useGetApiAim();
@@ -112,8 +120,10 @@ export const Planning: React.FC = () => {
     };
 
     const debugArr: any[] = [];
+    const allPlanned = [...planned, ...phantoms.filter(p => p.isEnabled)];
+    
     // Build month-by-month net amounts using daily rates
-    planned.forEach((p) => {
+    allPlanned.forEach((p) => {
       const typeName = p.transactionType?.name;
       const { dailyRate, isOneTime, amount } = getDailyRate(p);
       const perMonthContribs: number[] = new Array(monthsToForecast).fill(0);
@@ -158,6 +168,7 @@ export const Planning: React.FC = () => {
           totalForPeriod,
           frequency: p.frequency?.name || `${p.frequency?.intervalValue} x ${p.frequency?.intervalUnit?.name}`,
           startDate: p.startDate,
+          phantomId: (p as any).phantomId,
         });
       } else if (isOneTime) {
         if (!p.startDate) return;
@@ -185,6 +196,7 @@ export const Planning: React.FC = () => {
           totalForPeriod: amount,
           frequency: 'One-time',
           startDate: p.startDate,
+          phantomId: (p as any).phantomId,
         });
         if (isExpenseType(typeName)) {
           const catName = p.category?.name || 'Без категорії';
@@ -211,7 +223,7 @@ export const Planning: React.FC = () => {
       expenseByCategory: catMap,
       debugDetails: debugArr,
     };
-  }, [planned, convert, monthsToForecast, selectedCurrencyName]);
+  }, [planned, phantoms, convert, monthsToForecast, selectedCurrencyName]);
 
   // 2. Waterfall Forecast Logic
   const forecastAims = useMemo(() => {
@@ -361,6 +373,27 @@ export const Planning: React.FC = () => {
             </div>
           </Card>
 
+          <PhantomTransactionsBlock 
+            phantoms={phantoms}
+            togglePhantom={togglePhantom}
+            deletePhantom={deletePhantom}
+            onAddClick={() => { setEditingPhantom(null); setIsPhantomModalOpen(true); }}
+            onEditClick={(p) => { setEditingPhantom(p); setIsPhantomModalOpen(true); }}
+          />
+
+          <PhantomTransactionModal 
+            isOpen={isPhantomModalOpen}
+            onClose={() => setIsPhantomModalOpen(false)}
+            editingTransaction={editingPhantom}
+            onSave={(t) => {
+              if (editingPhantom) {
+                editPhantom(editingPhantom.phantomId, t);
+              } else {
+                addPhantom(t);
+              }
+            }}
+          />
+
           {showDetailedBreakdown && (
             <div className="space-y-6 animate-in fade-in slide-in-from-top-4 duration-300">
               {/* Monthly Summary */}
@@ -429,7 +462,14 @@ export const Planning: React.FC = () => {
                       <div key={d.id} className="border border-hairline p-4 rounded-xl flex flex-col gap-3 hover:border-hairline hover:shadow-sm transition-all">
                         <div className="flex flex-col sm:flex-row sm:justify-between sm:items-start gap-2">
                           <div>
-                            <div className="font-semibold text-sm text-ink">{d.name}</div>
+                            <div className="font-semibold text-sm text-ink flex items-center gap-2">
+                              {d.name}
+                              {(d as any).phantomId && (
+                                <span className="text-[10px] bg-primary text-white px-1.5 py-0.5 rounded-md font-bold uppercase">
+                                  Фантом
+                                </span>
+                              )}
+                            </div>
                             <div className="text-xs text-[#7a7a7a] mt-1 flex flex-wrap items-center gap-1.5">
                               <span className={`px-1.5 py-0.5 rounded-md text-[10px] font-bold uppercase ${isExp ? 'bg-red-50 text-red-600' : isInc ? 'bg-green-50 text-green-600' : 'bg-gray-100 text-gray-600'}`}>
                                 {d.type}
