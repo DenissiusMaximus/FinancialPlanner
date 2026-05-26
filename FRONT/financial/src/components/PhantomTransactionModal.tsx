@@ -194,7 +194,6 @@ export const PhantomTransactionModal: React.FC<PhantomTransactionModalProps> = (
             </button>
           </div>
         </form>
-      </div>
-    </div>
+    </Modal>
   );
 };
