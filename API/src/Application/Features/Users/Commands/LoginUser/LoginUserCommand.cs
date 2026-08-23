@@ -1,0 +1,3 @@
+namespace FinancialPlanner.Application.Features.Users.Commands.LoginUser;
+
+public sealed record LoginUserCommand(string Email, string Password);

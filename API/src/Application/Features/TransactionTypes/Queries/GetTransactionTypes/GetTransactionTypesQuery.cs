@@ -1,0 +1,3 @@
+namespace FinancialPlanner.Application.Features.TransactionTypes.Queries.GetTransactionTypes;
+
+public sealed record GetTransactionTypesQuery;

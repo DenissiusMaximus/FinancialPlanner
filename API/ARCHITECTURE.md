@@ -1,216 +1,65 @@
 # Architecture overview
 
-This project is a layered ASP.NET Core API with a clean separation between controllers, services, domain logic, and technical infrastructure, visible in [API/Program.cs](API/Program.cs#L61-L141) and the files linked below.
+This project follows Clean Architecture: four projects arranged so dependencies only point inward — `Api` → `Infrastructure` → `Application` → `Domain`. `Domain` has no dependency on anything else in the solution; it doesn't even reference Entity Framework.
 
-## 1. Layered structure
-
-### Presentation layer
-Controllers are intentionally thin. They only accept input, call a service, and return HTTP responses, as shown in [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56), [API/Controllers/UserController.cs](API/Controllers/UserController.cs#L11-L57), and [API/Controllers/TransactionController.cs](API/Controllers/TransactionController.cs#L13-L43).
-
-- [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11)
-- [API/Controllers/UserController.cs](API/Controllers/UserController.cs#L11)
-- [API/Controllers/TransactionController.cs](API/Controllers/TransactionController.cs#L13)
-
-This keeps HTTP concerns out of business logic and makes controllers easy to test.
-
-### Application layer
-Most business rules live in services, not in controllers, for example [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161), [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L12-L80), and [API/Domain/BalanceManagement/BalanceManagementService.cs](API/Domain/BalanceManagement/BalanceManagementService.cs#L8-L56).
-
-- [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161)
-- [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L12-L80)
-- [API/Domain/BalanceManagement/BalanceManagementService.cs](API/Domain/BalanceManagement/BalanceManagementService.cs#L8-L56)
-
-The service layer coordinates database access, validation decisions, current user checks, and domain notifications, so the HTTP layer stays minimal.
-
-### Domain / utility layer
-Reusable technical concerns are isolated into focused components such as [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9), [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13), and [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
-
-- current user context: [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9)
-- notification storage: [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13)
-- global exception handler: [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15)
-- mapping configuration: [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L6-L14)
-- mapping helper: [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
-
-## 2. Patterns used
-
-### Thin controller pattern
-Controllers are small orchestration points. They do not contain business rules, database logic, or cross-cutting concerns, which is why [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56) and the other controllers remain short.
-
-Example locations:
-
-- [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11)
-- [API/Controllers/UserController.cs](API/Controllers/UserController.cs#L11)
-- [API/Controllers/TransactionController.cs](API/Controllers/TransactionController.cs#L13)
-
-### Notification pattern
-The project uses a notification context to collect multiple domain errors without throwing exceptions for every validation failure. The main pieces are [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) and [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32).
-
-- [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13)
-- [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
-- [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L35)
-- [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L12-L40)
-- [API/Domain/BalanceManagement/BalanceManagementService.cs](API/Domain/BalanceManagement/BalanceManagementService.cs#L8-L24)
-
-Why this is useful:
-
-- several validation issues can be accumulated in one request
-- the API can return one structured `ValidationProblemDetails` response
-- business rules remain explicit in services
-- the code avoids many small generic exceptions for expected domain failures
-
-### Global request-to-response handling
-The project uses an exception handler for unexpected failures and a request logger for consistent telemetry, configured in [API/Program.cs](API/Program.cs#L112-L141) and implemented in [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
-
-- [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15)
-- [API/Program.cs](API/Program.cs#L112-L141)
-
-The flow is:
-
-1. unexpected exception is caught globally
-2. it is logged once
-3. the API returns a safe 500 response
-4. every request is logged by Serilog request logging
-
-### Decorator pattern
-The project decorates selected services with logging wrappers, registered in [API/Program.cs](API/Program.cs#L64-L67) and implemented in [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) and [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42).
-
-- [API/Program.cs](API/Program.cs#L64-L67)
-- [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27)
-- [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42)
-
-This is a clean way to add logging around existing services without changing their core logic.
-
-#### Why `builder.Services.Decorate` is better than manual decoration
-
-`builder.Services.Decorate` replaces the repetitive manual pattern where you register the inner service, resolve it yourself, and then wrap it.
-
-Manual decoration usually looks like this:
-
-```csharp
-builder.Services.AddScoped<IJwtService>(sp =>
-{
-    var inner = ActivatorUtilities.CreateInstance<JwtService>(sp);
-    return new JwtLoggingService(
-        inner,
-        sp.GetRequiredService<ILogger<JwtLoggingService>>(),
-        sp.GetRequiredService<IHttpContextAccessor>());
-});
+```
+src/
+  Domain/           entities, Result/Error, repository interfaces, domain services
+  Application/      CQRS commands/queries, handlers, validators, DTOs, mapping
+  Infrastructure/    EF Core DbContext, repositories, JWT/password implementations, DI wiring
+  Api/               controllers, Program.cs, HTTP-specific concerns
+tests/
+  Application.Tests/ handler and domain-service tests (xUnit + Moq + EF InMemory)
 ```
 
-With decoration, the registration stays simpler:
+## 1. Layers
 
-- base implementation: [API/Program.cs](API/Program.cs#L64-L64)
-- wrapper: [API/Program.cs](API/Program.cs#L65-L67)
+### Domain (`src/Domain`)
+The innermost layer. Contains:
+- **Entities** (`Entities/`) — plain classes mapped to the database, no EF attributes or behavior.
+- **`Common/Result.cs`, `Common/Error.cs`** — a `Result`/`Result<T>` type used instead of exceptions or nulls for expected failures. Every handler returns a `Result`.
+- **`Errors/`** — one static class per aggregate (`AimErrors`, `TransactionErrors`, `UserErrors`, …), each method building a named `Error` with a stable `Code` and an `ErrorType` (`NotFound`, `Validation`, `Conflict`, `Unauthorized`, `Forbidden`, `Failure`).
+- **`Repositories/`** — repository interfaces and `IUnitOfWork`. Domain defines the contracts; `Infrastructure` implements them. Repositories return entities, never DTOs.
+- **`Services/`** — pure domain logic with no I/O: `IBalanceManager` (applies/reverts a transaction's effect on source balances) and `IAimProgressCalculator` (computes aim funding progress across shared sources by priority).
 
-This is easier to read, easier to extend, and avoids duplicated dependency resolution code compared with the manual registration shown above.
+### Application (`src/Application`)
+CQRS: every use case is a `Command` or `Query` record plus a matching `...Handler` class with a single `HandleAsync` method returning `Result` or `Result<T>`. Organized by feature under `Features/<Feature>/{Commands,Queries}/<Operation>/`.
 
-### Singleton pattern
-`PasswordHasher` is registered as a singleton because it is stateless and safe to reuse across the application, as configured in [API/Program.cs](API/Program.cs#L61-L61) and implemented in [API/Utils/PasswordHasher/PasswordHasher.cs](API/Utils/PasswordHasher/PasswordHasher.cs#L3-L13).
+A handler's shape is always the same:
+1. Validate the command via an injected `IValidator<TCommand>` (FluentValidation); on failure, return `Result.Failure` with a `ValidationError`.
+2. Load what's needed through repository interfaces.
+3. Apply the change (mutate a tracked entity, or construct a new one) and call `IUnitOfWork.SaveChangesAsync`.
+4. Map the result to a DTO with Mapster (`IMapper`, injected) and return it.
 
-- [API/Program.cs](API/Program.cs#L61-L61)
-- [API/Utils/PasswordHasher/PasswordHasher.cs](API/Utils/PasswordHasher/PasswordHasher.cs#L3-L13)
+`Common/Mapping` holds the Mapster `IRegister` configurations (e.g. flattening `Aim.SourceAims` into a `Sources` list) and the null-ignoring `IPatchMapper` used for PATCH-style updates.
 
-This is a good fit because the class only performs hashing and verification and does not keep per-request state.
+### Infrastructure (`src/Infrastructure`)
+Implements everything Domain and Application only declared as interfaces:
+- `Database/ApplicationDbContext.cs` + `Database/Configurations/*Configuration.cs` (one `IEntityTypeConfiguration<T>` per entity, applied via `ApplyConfigurationsFromAssembly`).
+- `Database/Repositories/` — one repository per aggregate; each owns its own filtering/sorting/paging and eager-loads exactly the navigation properties its callers need.
+- `Security/` — `PasswordHasher` (BCrypt) and `JwtProvider` (token issuance and validation; blacklist-checking is orchestrated by the Application handlers that call it, not by the provider itself).
+- `DependencyInjection.cs` — a single `AddInfrastructure(configuration)` entry point wiring the DbContext, FluentValidation, Mapster, repositories, domain services, and all Application handlers (the handlers are registered by convention — every class whose name ends in `Handler` — instead of one line per handler).
 
-### Chain of responsibility style pipeline
-The request pipeline is an ordered chain of handlers. This is not a classic hand-written GoF chain class, but the architecture clearly follows the same idea in [API/Program.cs](API/Program.cs#L139-L141) and [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32).
+### Api (`src/Api`)
+Thin controllers. Each action builds a command/query, calls its handler, and passes the `Result` to `BaseApiController.HandleResult(...)`, which maps `ErrorType` to an HTTP status and a `ProblemDetails` body in one place. `Security/CurrentUserContext.cs` implements `ICurrentUserContext` over `IHttpContextAccessor` — this is HTTP-specific, so it lives here rather than in Infrastructure.
 
-Relevant steps:
+## 2. Key patterns
 
-- [API/Program.cs](API/Program.cs#L139-L141)
-- [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
+### Result instead of exceptions for expected failures
+Domain and Application never throw for "not found" or "validation failed" — they return `Result.Failure(SomeErrors.X(...))`. `GlobalExceptionHandler` (in `Api/Utils`) exists only for genuinely unexpected exceptions and always returns a generic 500; it is not part of normal control flow.
 
-The order matters:
+### CQRS with explicit handlers
+There is no mediator/pipeline library. A controller calls exactly one handler by constructor injection. This keeps the call stack for any given endpoint to two hops (`Controller` → `Handler`) and makes each use case's dependencies explicit in its constructor.
 
-1. exception handling
-2. request logging
-3. authentication
-4. authorization
-5. controller action filters
-6. controller action execution
+### Repository + Unit of Work
+Repositories never call `SaveChanges`; only `IUnitOfWork.SaveChangesAsync` does. This lets a handler compose multiple repository calls (e.g. reverting a transfer's source and destination balances) inside one `IUnitOfWork.BeginTransactionAsync` scope and commit once.
 
-### Current-user abstraction
-The current user is not read directly from controllers or services. It is wrapped behind a dedicated abstraction in [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6) and [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9).
+### Domain services stay pure
+`BalanceManager` and `AimProgressCalculator` take already-loaded entities as parameters and never touch a `DbContext`. Handlers are responsible for loading data through repositories first. This is what makes them unit-testable without any database.
 
-- interface: [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6)
-- implementation: [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9)
+### Patch mapping
+Update commands carry nullable fields for every patchable property. `IPatchMapper.PatchInto(command, entity)` copies only the non-null fields onto the tracked entity, using a Mapster config with `IgnoreNullValues(true)` that is separate from the read-mapping config but scans the same `IRegister` classes.
 
-This reduces repeated `HttpContext` access and keeps user ID lookup in one place.
+## 3. Testing
 
-### Query composition helpers
-Filtering and sorting logic is extracted into extension methods instead of being duplicated in service methods, mainly in [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60), [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28), and [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18).
-
-- aims: [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60)
-- transactions: [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28)
-- planned transactions: [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18)
-
-Benefits:
-
-- smaller service methods
-- reusable query rules
-- easier testing of query behavior
-- better readability for complex filtering and sorting
-
-### Patch mapping and null-safe updates
-Patch/update operations use a reusable Mapster configuration that ignores null values, defined in [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14) and used through [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7).
-
-- [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14)
-- [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
-- usage example: [API/Services/Category/CategoryService.cs](API/Services/Category/CategoryService.cs#L57-L66)
-
-This avoids boilerplate manual property-by-property updates for patch endpoints.
-
-### Validation layer
-Validation is centralized through FluentValidation and automatic model validation, wired in [API/Program.cs](API/Program.cs#L83-L85) with validators under [API/Validators](API/Validators).
-
-- [API/Program.cs](API/Program.cs#L83-L85)
-- validators are under [API/Validators](API/Validators)
-
-This keeps input validation separate from business rules and prevents controllers from becoming validation-heavy.
-
-## 3. Good architectural decisions in the code
-
-- Controllers are thin and declarative, for example [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56).
-- Business logic is in services such as [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161).
-- Domain errors are accumulated through notifications in [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13).
-- Logging is added through decorators instead of copy-paste code in [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) and [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42).
-- Global exception handling protects the API from leaking internal details in [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
-- A current-user abstraction removes repeated `HttpContext` access in [API/Utils/UserContext/CurrentUserProvider.cs](API/Utils/UserContext/CurrentUserProvider.cs#L5-L9).
-- Query logic is composed with extension methods in [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60).
-- Patch mapping is centralized and null-safe in [API/Utils/Mapping/MapConfig.cs](API/Utils/Mapping/MapConfig.cs#L8-L14).
-- Request logging is global and consistent via [API/Program.cs](API/Program.cs#L139-L141).
-- The password hasher is a stateless singleton via [API/Program.cs](API/Program.cs#L61-L61).
-
-## 4. Short conclusion
-
-This codebase is a solid example of practical layered architecture in ASP.NET Core. The strongest parts are the small controllers, notification-based domain feedback, decorator-based logging, centralized user context, and the global request/exception pipeline described above.
-
-## 5. Clean code principles
-
-### KISS
-Keep It Simple, Stupid. The code follows this by keeping controllers small and moving logic into focused services.
-
-- thin controllers: [API/Controllers/AimController.cs](API/Controllers/AimController.cs#L11-L56)
-- service logic: [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L161)
-- request pipeline setup: [API/Program.cs](API/Program.cs#L61-L141)
-
-### DRY
-Don't Repeat Yourself. Repeated logic is extracted into reusable pieces instead of being copy-pasted.
-
-- notification storage and reporting: [API/Utils/Notification/NotificationContext.cs](API/Utils/Notification/NotificationContext.cs#L3-L13) and [API/Filters/NotificationFilter.cs](API/Filters/NotificationFilter.cs#L7-L32)
-- query helpers: [API/Extensions/EF/AimQueryExtensions.cs](API/Extensions/EF/AimQueryExtensions.cs#L8-L60), [API/Extensions/EF/TransactionQueryExtensions.cs](API/Extensions/EF/TransactionQueryExtensions.cs#L6-L28), [API/Extensions/EF/PlannedTransactionExtensions.cs](API/Extensions/EF/PlannedTransactionExtensions.cs#L5-L18)
-- patch mapping helper: [API/Extensions/MappingExtensions.cs](API/Extensions/MappingExtensions.cs#L5-L7)
-
-### SOLID
-
-- **S — Single Responsibility Principle**: each class has one main reason to change. Examples: [API/Services/Logging/JwtLoggingService.cs](API/Services/Logging/JwtLoggingService.cs#L5-L27) only adds logging around JWT logic, while [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15) only handles unhandled exceptions.
-- **O — Open/Closed Principle**: behavior can be extended without changing existing consumers, for example via [API/Services/Logging/UserLoggingService.cs](API/Services/Logging/UserLoggingService.cs#L5-L42) and service decoration in [API/Program.cs](API/Program.cs#L64-L67).
-- **L — Liskov Substitution Principle**: services are consumed through interfaces such as [API/Services/Jwt/IJwtService.cs](API/Services/Jwt/IJwtService.cs) and [API/Services/User/IUserService.cs](API/Services/User/IUserService.cs), so implementations can be swapped without breaking callers.
-- **I — Interface Segregation Principle**: the code uses small focused interfaces like [API/Utils/UserContext/ICurrentUserProvider.cs](API/Utils/UserContext/ICurrentUserProvider.cs#L3-L6), [API/Utils/PasswordHasher/IPasswordHasher.cs](API/Utils/PasswordHasher/IPasswordHasher.cs#L3-L6), and service interfaces in the Services folder.
-- **D — Dependency Inversion Principle**: high-level code depends on abstractions, not concrete implementations. This is visible in [API/Program.cs](API/Program.cs#L61-L88) and in constructors like [API/Services/Aim/AimService.cs](API/Services/Aim/AimService.cs#L12-L12).
-
-### Other useful principles
-
-- **Composition over inheritance**: logic is composed from small services, decorators, and extensions rather than deep class hierarchies.
-- **Separation of concerns**: HTTP handling, validation, domain notifications, logging, and data access are separated across different files.
-- **Fail fast for unexpected errors**: unhandled exceptions are captured by the global handler in [API/Utils/ExceptionHandler/GlobalExceptionHandler.cs](API/Utils/ExceptionHandler/GlobalExceptionHandler.cs#L5-L15).
+`tests/Application.Tests` exercises handlers directly against EF Core's InMemory provider through the real repository implementations — no mocking of the database. External concerns (`IPasswordHasher`, `IJwtProvider`) are mocked with Moq where a handler's own logic, not the collaborator's, is under test. Domain services (`BalanceManager`, `AimProgressCalculator`) are tested with no infrastructure at all — they're plain constructors and method calls.

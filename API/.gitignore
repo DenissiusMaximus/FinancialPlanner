@@ -10,7 +10,7 @@
 **/*.suo
 
 # Logs
-API/logs/
+src/Api/logs/
 
 # Local configuration with secrets
 **/appsettings.Development.json

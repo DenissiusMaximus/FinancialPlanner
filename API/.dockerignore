@@ -1,0 +1,11 @@
+bin/
+obj/
+logs/
+**/bin/
+**/obj/
+.vs/
+.vscode/
+*.user
+API/
+APITest/
+tests/
