@@ -3,8 +3,6 @@
 ## Live Demo
 The full application is available here: https://fin.ubivator.tech/
 
-> Note: the database is hosted on a free tier, so it may go to sleep when idle. If the app/API doesn’t respond on the first try, open it once, wait ~30 seconds, and try again.
-
 The backend portion of a personal finance management application, built with ASP.NET Core. This project is developed with a strong emphasis on clean code, scalability, and a Clean Architecture layout organized around vertical feature slices.
 
 ## Tech Stack
