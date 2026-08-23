@@ -15,5 +15,12 @@ public class IntervalUnitConfiguration : IEntityTypeConfiguration<IntervalUnit>
             .HasMaxLength(255)
             .IsUnicode(true)
             .HasColumnName("name");
+
+        entity.HasData(
+            new IntervalUnit { Id = 1, Name = "Day" },
+            new IntervalUnit { Id = 2, Name = "Week" },
+            new IntervalUnit { Id = 3, Name = "Month" },
+            new IntervalUnit { Id = 4, Name = "Year" }
+        );
     }
 }

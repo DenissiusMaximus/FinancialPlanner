@@ -13,5 +13,12 @@ public class TransactionTypeConfiguration : IEntityTypeConfiguration<Transaction
         entity.Property(e => e.Name)
             .HasMaxLength(255)
             .IsUnicode(true);
+
+        entity.HasData(
+            new TransactionType { Id = 1, Name = "Expense" },
+            new TransactionType { Id = 2, Name = "Income" },
+            new TransactionType { Id = 3, Name = "Transfer" },
+            new TransactionType { Id = 4, Name = "Adjustment" }
+        );
     }
 }
