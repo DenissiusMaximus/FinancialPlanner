@@ -53,7 +53,7 @@ export const PhantomTransactionsBlock: React.FC<PhantomTransactionsBlockProps> =
               <Sparkles size={24} className="text-[#a0a0a0]" />
             </div>
             <h5 className="font-semibold text-ink mb-1">Немає фантомних транзакцій</h5>
-            <p className="text-sm text-[#7a7a7a] w-full max-w-lg mx-auto mb-6 text-center">
+            <p className="text-sm text-[#7a7a7a] w-full max-w-[32rem] mx-auto mb-6 text-center">
               Додайте фантомні витрати або доходи, щоб побачити, як вони вплинуть на ваші цілі.
             </p>
             <button
