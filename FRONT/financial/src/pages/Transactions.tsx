@@ -49,7 +49,7 @@ export const Transactions: React.FC = () => {
 
   // Build API query params — pass filters to server
   const queryParams = {
-    Limit: 200,
+    Limit: 100,
     ...filters,
   };
 

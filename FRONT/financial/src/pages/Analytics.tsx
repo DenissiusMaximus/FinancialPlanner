@@ -1,12 +1,36 @@
 import React, { useState, useMemo } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { TrendingUp, TrendingDown, ArrowLeftRight } from 'lucide-react';
 import { DashboardSection } from '../components/DashboardSection';
 import { Card } from '../components/Card';
 import { Skeleton } from '../components/Skeleton';
-import { useGetApiTransaction } from '../api/generated/endpoints';
+import { getApiTransaction } from '../api/generated/endpoints';
+import type { TransactionDto } from '../types/generated/transactionDto';
 import { formatCurrency } from '../utils/formatters';
 import { isIncomeType, isExpenseType } from '../utils/display-helpers';
 import { useCurrencyConvert } from '../hooks/useCurrencyConvert';
+
+const TRANSACTIONS_PAGE_SIZE = 100;
+
+async function fetchAllTransactions(fromDate: string, toDate: string): Promise<TransactionDto[]> {
+  const all: TransactionDto[] = [];
+  let offset = 0;
+
+  while (true) {
+    const page = await getApiTransaction({
+      Limit: TRANSACTIONS_PAGE_SIZE,
+      Offset: offset,
+      FromDate: fromDate,
+      ToDate: toDate,
+    });
+    all.push(...(page.data ?? []));
+
+    if (!page.meta?.hasMore) break;
+    offset += TRANSACTIONS_PAGE_SIZE;
+  }
+
+  return all;
+}
 
 export const Analytics: React.FC = () => {
   const [dateFrom, setDateFrom] = useState<string>(() => {
@@ -18,19 +42,12 @@ export const Analytics: React.FC = () => {
 
   const { convert, selectedCurrencyName } = useCurrencyConvert();
 
-  const transactionsQuery = useGetApiTransaction({
-    Limit: 10000,
-    FromDate: dateFrom,
-    ToDate: dateTo,
+  const transactionsQuery = useQuery({
+    queryKey: ['/api/Transaction/all', dateFrom, dateTo],
+    queryFn: () => fetchAllTransactions(dateFrom, dateTo),
   });
 
-  const rawTransactions = (Array.isArray(transactionsQuery.data?.data)
-    ? transactionsQuery.data?.data
-    : Array.isArray((transactionsQuery.data as any)?.items)
-    ? (transactionsQuery.data as any).items
-    : Array.isArray(transactionsQuery.data)
-    ? transactionsQuery.data
-    : []) as any[];
+  const rawTransactions = transactionsQuery.data ?? [];
 
   const transactions = [...rawTransactions].sort(
     (a, b) => new Date(b.date ?? 0).getTime() - new Date(a.date ?? 0).getTime()
