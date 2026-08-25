@@ -2,8 +2,10 @@ using FinancialPlanner.Application.Abstractions;
 using FinancialPlanner.Application.Common.Mapping;
 using FinancialPlanner.Domain.Repositories;
 using FinancialPlanner.Domain.Services;
+using FinancialPlanner.Infrastructure.Background_workers;
 using FinancialPlanner.Infrastructure.Database;
 using FinancialPlanner.Infrastructure.Database.Repositories;
+using FinancialPlanner.Infrastructure.ExchangeRates;
 using FinancialPlanner.Infrastructure.Security;
 using FluentValidation;
 using Mapster;
@@ -25,6 +27,7 @@ public static class DependencyInjection
         services.AddDomainServices();
         services.AddHandlers();
         services.AddSecurity(configuration);
+        services.AddExchangeRateSync();
 
         return services;
     }
@@ -103,6 +106,17 @@ public static class DependencyInjection
         services.AddSingleton<IPasswordHasher, PasswordHasher>();
         services.AddScoped<IJwtProvider, JwtProvider>();
         services.Configure<JwtOptions>(configuration.GetSection("Jwt"));
+
+        return services;
+    }
+
+    public static IServiceCollection AddExchangeRateSync(this IServiceCollection services)
+    {
+        services.AddHttpClient<IExchangeRateService, NbuExchangeRateService>(client =>
+        {
+            client.BaseAddress = new Uri("https://bank.gov.ua/");
+        });
+        services.AddHostedService<GetActualExchangeRateBackgroundWorker>();
 
         return services;
     }

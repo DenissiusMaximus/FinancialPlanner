@@ -7,4 +7,6 @@ public interface ICurrencyRepository
     Task<Currency?> GetByIdAsync(int id, CancellationToken ct);
 
     Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken ct);
+
+    Task<IReadOnlyList<Currency>> GetAllTrackedAsync(CancellationToken ct);
 }

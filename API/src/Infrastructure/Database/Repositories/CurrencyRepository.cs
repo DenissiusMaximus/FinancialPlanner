@@ -11,4 +11,7 @@ public class CurrencyRepository(ApplicationDbContext context) : ICurrencyReposit
 
     public async Task<IReadOnlyList<Currency>> GetAllAsync(CancellationToken ct)
         => await context.Currencies.AsNoTracking().ToListAsync(ct);
+
+    public async Task<IReadOnlyList<Currency>> GetAllTrackedAsync(CancellationToken ct)
+        => await context.Currencies.ToListAsync(ct);
 }
