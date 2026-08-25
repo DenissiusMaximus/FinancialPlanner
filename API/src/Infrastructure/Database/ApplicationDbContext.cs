@@ -1,5 +1,6 @@
 using FinancialPlanner.Domain.Entities;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 namespace FinancialPlanner.Infrastructure.Database;
 
@@ -32,5 +33,31 @@ public class ApplicationDbContext(DbContextOptions<ApplicationDbContext> options
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         modelBuilder.ApplyConfigurationsFromAssembly(typeof(ApplicationDbContext).Assembly);
+
+        var utcConverter = new ValueConverter<DateTime, DateTime>(
+            v => EnsureUtc(v),
+            v => DateTime.SpecifyKind(v, DateTimeKind.Utc));
+
+        var nullableUtcConverter = new ValueConverter<DateTime?, DateTime?>(
+            v => v.HasValue ? EnsureUtc(v.Value) : v,
+            v => v.HasValue ? DateTime.SpecifyKind(v.Value, DateTimeKind.Utc) : v);
+
+        foreach (var entityType in modelBuilder.Model.GetEntityTypes())
+        {
+            foreach (var property in entityType.GetProperties())
+            {
+                if (property.ClrType == typeof(DateTime))
+                    property.SetValueConverter(utcConverter);
+                else if (property.ClrType == typeof(DateTime?))
+                    property.SetValueConverter(nullableUtcConverter);
+            }
+        }
     }
+
+    private static DateTime EnsureUtc(DateTime value) => value.Kind switch
+    {
+        DateTimeKind.Utc => value,
+        DateTimeKind.Local => value.ToUniversalTime(),
+        _ => DateTime.SpecifyKind(value, DateTimeKind.Utc)
+    };
 }
